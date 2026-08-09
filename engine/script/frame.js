@@ -2,6 +2,7 @@ MCGL.getDateInput = function(){
 	var r = {};
 }
 
+var mc_url_params = {};
 
 var hcc = new hc_counter['default']();
 hcc.canvasName = 'main_counter_canvas';
@@ -321,10 +322,10 @@ function setVM(new_vm){
 		case 3:
 			setValueById('mf_ba_tz_cur', -hc_tz_val);
 			setInnerHTML('mf_ba_tz_cur', tx.current + ' ' + hc_get_tz_str(-hc_tz_val * 60));
-			setValueById('mf_ba_m', 2);
-			//cahngeBornDateEvent();
-			prAr.touch('born_date');
-			
+			if (!mc_url_params.t) {
+				setValueById('mf_ba_m', 2);
+				prAr.touch('born_date');
+			}
 			refreshText12();
 			changeTimeToggleFrom(1, true);
 			refreshLinkView();
@@ -389,19 +390,48 @@ function disableAd(){
 
 function parseUrlParams(){
 	var search = window.location.search;
+	mc_url_params = {};
 	if (!search || search.length < 2) return;
-	var params = {};
 	search.slice(1).split('&').forEach(function(pair){
 		var parts = pair.split('=');
-		if (parts[0]) params[decodeURIComponent(parts[0])] = decodeURIComponent(parts[1] || '');
+		if (parts[0]) mc_url_params[decodeURIComponent(parts[0])] = decodeURIComponent(parts[1] || '');
 	});
-	if (params.wm) hc_vm = parseInt(params.wm, 10) || hc_vm;
-	if (params.t) hc_bornTime = parseInt(params.t, 10) || hc_bornTime;
-	if (params.tz !== undefined && params.tz !== '') hc_time_z = parseInt(params.tz, 10) || 0;
-	if (params.fid) hc_event_fid = parseInt(params.fid, 10) || hc_event_fid;
-	if (params.t1) hc_text1 = Base64.decode(params.t1);
-	if (params.t2) hc_text2 = Base64.decode(params.t2);
-	if (params.wid) hc_event_wid = parseInt(params.wid, 10) || 1;
+	if (mc_url_params.wm) hc_vm = parseInt(mc_url_params.wm, 10) || hc_vm;
+	if (mc_url_params.wid) hc_event_wid = parseInt(mc_url_params.wid, 10) || 1;
+	if (mc_url_params.t1) hc_text1 = Base64.decode(mc_url_params.t1);
+	if (mc_url_params.t2) hc_text2 = Base64.decode(mc_url_params.t2);
+}
+
+function syncFormFromBornTime(t){
+	var mcd = new mc_date();
+	var tzSec = (hcc.h.tzen && !hcc.h.tzunk) ? hcc.h.tz : 0;
+	mcd.setTime(t + tzSec * 1000);
+	setValueById('mf_ba_y', mcd.y);
+	setValueById('mf_ba_m', mcd.m);
+	setValueById('mf_ba_d', mcd.d + 1);
+	if (hcc.h.ent > 1) setValueById('mf_ba_h', mcd.h);
+	if (hcc.h.ent > 2) setValueById('mf_ba_min', mcd.i);
+	if (hcc.h.ent > 3) setValueById('mf_ba_s', mcd.s);
+}
+
+function applyUrlParamsToCounter(){
+	if (!mc_url_params.t) return false;
+	var t = parseInt(mc_url_params.t, 10);
+	if (isNaN(t)) return false;
+	if (mc_url_params.tz !== undefined && mc_url_params.tz !== '') {
+		hcc.h.setTZ(parseInt(mc_url_params.tz, 10));
+	}
+	var fid = parseInt(mc_url_params.fid, 10);
+	if (fid) {
+		hcc.h.format = fid;
+		hc_event_fid = fid;
+	}
+	hc_bornTime = t;
+	setBornTime(t, hcc.h.tz, hcc.h.tzen, hcc.h.isGMT, hcc.h.tzunk);
+	syncFormFromBornTime(t);
+	if (hc_text1) setInnerHTML('mf_text1', hc_text1);
+	if (hc_text2) setInnerHTML('mf_text2', hc_text2);
+	return true;
 }
 
 window.onload = function () {
@@ -425,11 +455,17 @@ window.onload = function () {
 	dBg.init();
 	var canvas = document.getElementById("main_counter_canvas");
 	hcc.c = canvas.getContext("2d");
+
+	var hadUrlTime = applyUrlParamsToCounter();
 	
 	refreshEventTable();
 	refreshMetricToggle();
 	
 	setVM(hc_vm);
+	if (hadUrlTime) {
+		refreshMetricToggle();
+		prAr.touch('cnt_link');
+	}
 	if (typeof MC_UI_init === 'function') MC_UI_init(window.MC_STRINGS || {});
 	
 	hccDraw();

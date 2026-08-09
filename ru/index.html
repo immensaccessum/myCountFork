@@ -4,21 +4,20 @@
 	<title>myCount — счётчик времени до даты</title>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<link rel="stylesheet" type="text/css" href="engine/css/main.css">
-	<link rel="stylesheet" type="text/css" href="engine/css/theme.css">
-	<link rel="icon" href="favicon.ico" type="image/x-icon">
-	<link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
-	<script src="engine/script/pre.js"></script>
+	<link rel="stylesheet" type="text/css" href="../engine/css/main.css">
+	<link rel="stylesheet" type="text/css" href="../engine/css/theme.css">
+	<link rel="icon" href="../favicon.ico" type="image/x-icon">
+	<link rel="shortcut icon" href="../favicon.ico" type="image/x-icon">
+	<script src="../engine/script/pre.js"></script>
 </head>
 <body>
-	<script>if (!location.search && !location.hash) { const p = location.pathname.replace(/\/?$/, ''); if (!p.endsWith('/ru') && !p.endsWith('/en')) location.replace('ru/' + location.search + location.hash); }</script>
 	<div class="mf_bg_left"><canvas class="mf_bg_left" id="mf_bg_canvas"></canvas></div>
 	<div id="mf_main">
 		<div id="mf_main_holder">
 		<div id="mf_content">
 <div style="height:20px"></div>
 <table id="mf_top_logo"><tr>
-	<td style="padding-left:5px"><a href="/ru/"><img id="mf_logo" class="mf_logo_img" src="cimg/001/i/logo.png" alt="myCount — счётчик времени"/></a></td>
+	<td style="padding-left:5px"><a href="/ru/"><img id="mf_logo" class="mf_logo_img" src="../cimg/001/i/logo.png" alt="myCount — счётчик времени"/></a></td>
 	<td>
 	&nbsp;&nbsp;|&nbsp;&nbsp;<a href="https://github.com/elite-nick/myCount_fork">Github</a>
 	&nbsp;&nbsp;|&nbsp;&nbsp;<a href="/ru/?wm=1">Ближайшие события</a>
@@ -26,8 +25,8 @@
 	</td>
 	<td style="text-align:right; white-space:nowrap">
 		<button type="button" id="theme_toggle" class="mc_theme_btn" title="Тема">◐</button>
-		<a href="/en/"><img src="cimg/001/i/en.png" alt="en"/></a>
-		<a href="/ru/"><img src="cimg/001/i/ru.png" alt="ru"/></a>
+		<a href="/en/"><img src="../cimg/001/i/en.png" alt="en"/></a>
+		<a href="/ru/"><img src="../cimg/001/i/ru.png" alt="ru"/></a>
 	</td>
 </tr></table>
 <div style="height:20px"></div>
@@ -72,15 +71,15 @@
 	</tr><tr>
 	<td class="mc_input_label"><a href="/ru/?wm=3&inv=2&fid=3" onclick="return setFocusById('mf_ba_h', true)">Ч:</a></td><td>
 	<input id="mf_ba_h" class="mf_input_ba" type="text" value="0" onfocus="prAr.eset('mf_ba_h_en', 1)">
-	<a class="timeClBtn" href="#" onclick="mf_ba_h_cc(); return prAr.etouch('born_date');"><img id="mf_ba_h_close" src="cimg/001/i/close.png"/></a>
+	<a class="timeClBtn" href="#" onclick="mf_ba_h_cc(); return prAr.etouch('born_date');"><img id="mf_ba_h_close" src="../cimg/001/i/close.png"/></a>
 	</td>
 	<td class="mc_input_label"><a href="/ru/?wm=3&inv=2&fid=2" onclick="return setFocusById('mf_ba_min', true)">М:</a></td><td>
 	<input id="mf_ba_min" class="mf_input_ba" type="text" value="0" onfocus="prAr.eset('mf_ba_min_en', 1); prAr.eset('mf_ba_h_en', 1)">
-	<a id="mf_ba_min_close" class="timeClBtn" href="#" onclick="mf_ba_min_cc(); return prAr.etouch('born_date');"><img src="cimg/001/i/close.png"/></a>
+	<a id="mf_ba_min_close" class="timeClBtn" href="#" onclick="mf_ba_min_cc(); return prAr.etouch('born_date');"><img src="../cimg/001/i/close.png"/></a>
 	</td>
 	<td class="mc_input_label"><a href="/ru/?wm=3&inv=2&fid=1" onclick="return setFocusById('mf_ba_s', true)">С:</a></td><td>
 	<input id="mf_ba_s" class="mf_input_ba" type="text" value="0" onfocus="prAr.eset('mf_ba_s_en', 1); prAr.eset('mf_ba_min_en', 1); prAr.eset('mf_ba_h_en', 1)">
-	<a id="mf_ba_s_close" class="timeClBtn" href="#" onclick="mf_ba_s_cc(); return prAr.etouch('born_date');"><img src="cimg/001/i/close.png"/></a>
+	<a id="mf_ba_s_close" class="timeClBtn" href="#" onclick="mf_ba_s_cc(); return prAr.etouch('born_date');"><img src="../cimg/001/i/close.png"/></a>
 	</td>
 	</tr></table>
 	<table><tr>
@@ -127,14 +126,14 @@
 
 <div id="section_events" class="mf_container" style="display:none">
 	<h2><table class="mf_born_area_info"><tr>
-		<td class="mf_born_area_info_btn"><a href="#" id="mf_event_prev"><img src="cimg/001/i/prev.png" alt="prev"></a></td>
+		<td class="mf_born_area_info_btn"><a href="#" id="mf_event_prev"><img src="../cimg/001/i/prev.png" alt="prev"></a></td>
 		<td><div class="mf_born_area_date">
 			<div class="mf_born_area_date_year" id="mb_ba_dy"></div>
 			<div class="mf_born_area_date_day" id="mb_ba_dd"></div>
 			<div class="mf_born_area_date_time" id="mb_ba_dt"></div>
 		</div></td>
 		<td class="mcss_p15px" id="mf_event_desc"></td>
-		<td class="mf_born_area_info_btn"><a href="#" id="mf_event_next"><img src="cimg/001/i/next.png" alt="next"></a></td>
+		<td class="mf_born_area_info_btn"><a href="#" id="mf_event_next"><img src="../cimg/001/i/next.png" alt="next"></a></td>
 	</tr></table></h2>
 </div>
 
@@ -189,7 +188,7 @@ prAr.add('mf_ba_tz_tgl',null,null,function(pr){
 
 <div id="section_life_table" class="mf_container">
 <table>
-	<tr><td></td><td></td><td><img src="cimg/001/i/find.png" alt="Поиск:" style="margin-left:10px;margin-right:10px;" id="mf_find_val_img"/><input type="text" class="mf_text12_inp mc_blue_bg" id="mf_find_val" style="width:350px;position:relative;top:-5px;" onchange="cahngeBornDateEvent()" onfocus="cahngeBornDateTimer(true)" onblur="hc_enable_life_table=false"/></td></tr>
+	<tr><td></td><td></td><td><img src="../cimg/001/i/find.png" alt="Поиск:" style="margin-left:10px;margin-right:10px;" id="mf_find_val_img"/><input type="text" class="mf_text12_inp mc_blue_bg" id="mf_find_val" style="width:350px;position:relative;top:-5px;" onchange="cahngeBornDateEvent()" onfocus="cahngeBornDateTimer(true)" onblur="hc_enable_life_table=false"/></td></tr>
 	<tr><td class="mc_ytable_d" id="mc_ytable_d_0"></td><td class="mc_ytable_t" id="mc_ytable_t_0"></td><td class="mc_ytable_v" id="mc_ytable_v_0"></td></tr>
 	<tr><td class="mc_ytable_d" id="mc_ytable_d_1"></td><td class="mc_ytable_t" id="mc_ytable_t_1"></td><td class="mc_ytable_v" id="mc_ytable_v_1"></td></tr>
 	<tr><td class="mc_ytable_d" id="mc_ytable_d_2"></td><td class="mc_ytable_t" id="mc_ytable_t_2"></td><td class="mc_ytable_v" id="mc_ytable_v_2"></td></tr>
@@ -235,19 +234,19 @@ prAr.addInput('mf_cust_text1', 'born_date');
 prAr.addInput('mf_cust_text2', 'born_date');
 window.MC_STRINGS = {"lang":"ru","title":"myCount — счётчик времени до даты","logoAlt":"myCount — счётчик времени","navEvents":"Ближайшие события","navNew":"Новый счётчик","themeToggle":"Тема","introTitle":"Как рассчитать сколько секунд осталось до определённой даты?","introText":"Введите дату/время в форму. Счётчик myCount покажет оставшееся время. Можно переключать секунды, минуты, часы, дни и другие единицы.","dateHeader":"Дата и время:","year":"Год:","month":"Месяц:","day":"День:","hour":"Ч:","min":"М:","sec":"С:","tzLabel":"Часовой пояс:","tzCurrent":"текущий","tzNone":"не существует","tzUnknown":"неизвестен","months":["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"],"metrics":["секунд","минут","часов","дней","недель","месяцев","лет"],"search":"Поиск:","linkHeader":"Ссылка счётчика:","linkLabel":"Ссылка счётчика:","linkHint":"Поделитесь этой ссылкой — откроется только счётчик.","copyLink":"Копировать","copied":"Скопировано!","settingsHeader":"Настройки счётчика:","restMode":"Отображение остатка:","restDecimal":"десятичная дробь","restUnits":"единицы времени","topText":"Верхний текст:","bottomText":"Нижний текст:","presetsLabel":"Быстрые даты:","presetNow":"Сейчас","presetHour":"+1 час","presetTomorrow":"Завтра","presetNewYear":"Новый год","preset100m":"100 млн сек","footer":"myCount Fork v0.3","adLabel":"Реклама"};
 </script>
-<script src="engine/ru/script/txt.js"></script>
-<script src="engine/script/hc.js"></script>
-<script src="engine/script/events.js"></script>
+<script src="../engine/ru/script/txt.js"></script>
+<script src="../engine/script/hc.js"></script>
+<script src="../engine/script/events.js"></script>
 <script>
 var hc_event_result = false;
-var hc_rf = 'engine/';
+var hc_rf = '../engine/';
 var hc_ind = '/ru/';
 var hc_vm = 3;
 var hc_event_wid = 1;
 var hc_text1 = '';
 var hc_text2 = '';
 var hc_sub_text_shift = (hc_browser_id == 1) ? 50 : 0;
-var hc_constimg_path = 'cimg/001/';
+var hc_constimg_path = '../cimg/001/';
 var hc_bornTime = 1332104400000;
 var hc_time_z = 0;
 var hc_event_fid = 1;
@@ -265,9 +264,9 @@ var mcInVar = { cnt_w: 800, cnt_h: 85, enMainMetric: 1, enText1: 1, enText2: 1 }
 	document.getElementById('mf_ba_d').value = d.getDate();
 })();
 </script>
-<script src="engine/counters/default.js"></script>
-<script src="engine/script/frame.js"></script>
-<script src="engine/script/app.js"></script>
+<script src="../engine/counters/default.js"></script>
+<script src="../engine/script/frame.js"></script>
+<script src="../engine/script/app.js"></script>
 
 <div style="height:60px"></div>
 <div class="mf_container mc_footer_extra" style="border-top: 2px solid var(--mc-border);">

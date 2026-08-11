@@ -30,9 +30,7 @@ import {
   browserTzOffsetMin,
   defaultTzPacked,
   formatUtcOffset,
-  gmtToSeconds,
   inferTzMode,
-  secondsToGmt,
   type TzMode,
 } from './lib/tz';
 import { getLocale } from './i18n';
@@ -572,15 +570,8 @@ export class App {
   private readTzFromForm(): { tz: number; tzen: number; isGMT: number; tzunk: number } {
     switch (this.tzMode) {
       case 3:
-        return { tz: 0, tzen: 0, isGMT: 0, tzunk: 0 };
       case 4:
-        return { tz: 0, tzen: 1, isGMT: 0, tzunk: 1 };
-      case 2: {
-        const get = (sel: string) =>
-          parseInt((this.root.querySelector<HTMLInputElement>(sel)?.value || '0'), 10);
-        const tz = gmtToSeconds(get('#inp-gmt-h'), get('#inp-gmt-min'), get('#inp-gmt-s'));
-        return { tz, tzen: 1, isGMT: 1, tzunk: 0 };
-      }
+        return { tz: 0, tzen: 0, isGMT: 0, tzunk: 0 };
       default: {
         const min = parseInt(
           (this.root.querySelector<HTMLSelectElement>('#inp-tz-select')?.value || '0'),
@@ -592,12 +583,14 @@ export class App {
   }
 
   private syncTzFormFromHelper(): void {
-    this.tzMode = inferTzMode(this.helper.tzen, this.helper.isGMT, this.helper.tzunk);
-    this.applyTzModeUI();
+    const inferred = inferTzMode(this.helper.tzen, this.helper.isGMT, this.helper.tzunk);
+    // В форме два состояния: пояс из списка или «без пояса». Легаси-режимы старых
+    // ссылок (GMT со смещением, «неизвестен») сводим к ближайшему из них.
+    this.tzMode = inferred === 3 || inferred === 4 ? 3 : 1;
     if (this.tzMode === 1) {
       const sel = this.root.querySelector<HTMLSelectElement>('#inp-tz-select');
       if (sel) {
-        const min = String(this.helper.tz / 60);
+        const min = String(Math.round(this.helper.tz / 60));
         const cur = String(browserTzOffsetMin());
         if (min === cur) {
           const browserOpt = sel.querySelector<HTMLOptionElement>('option[data-browser="1"]');
@@ -606,27 +599,17 @@ export class App {
           sel.value = min;
         }
       }
-    } else if (this.tzMode === 2) {
-      const { h, min, s } = secondsToGmt(this.helper.tz);
-      const set = (sel: string, v: number) => {
-        const el = this.root.querySelector<HTMLInputElement>(sel);
-        if (el) el.value = String(v);
-      };
-      set('#inp-gmt-h', h);
-      set('#inp-gmt-min', min);
-      set('#inp-gmt-s', s);
     }
+    this.applyTzModeUI();
     this.updateTzToggleLabel();
   }
 
   private applyTzModeUI(): void {
-    const utc = this.root.querySelector('#tz-area-utc');
-    const gmt = this.root.querySelector('#tz-area-gmt');
-    if (utc) (utc as HTMLElement).hidden = this.tzMode !== 1;
-    if (gmt) (gmt as HTMLElement).hidden = this.tzMode !== 2;
-    this.root.querySelectorAll<HTMLButtonElement>('[data-tz-mode]').forEach((btn) => {
-      btn.classList.toggle('active', Number(btn.dataset.tzMode) === this.tzMode);
-    });
+    const omitted = this.tzMode === 3 || this.tzMode === 4;
+    const sel = this.root.querySelector<HTMLSelectElement>('#inp-tz-select');
+    if (sel) sel.disabled = omitted;
+    const chk = this.root.querySelector<HTMLInputElement>('#tz-omit');
+    if (chk) chk.checked = omitted;
   }
 
   private updateTextLimitHint(active?: HTMLInputElement): void {
@@ -859,10 +842,8 @@ export class App {
       const browserMin = browserTzOffsetMin();
       if (this.localDateActive || (this.helper.tzen && !this.helper.tzunk && this.helper.tz === browserMin * 60)) {
         tzHint.textContent = `${this.tx.tzLocalHint} ${formatUtcOffset(browserMin)}`;
-      } else if (this.helper.tzunk) {
-        tzHint.textContent = `${this.tx.tzLabel} ${this.tx.tzUnknown}`;
-      } else if (!this.helper.tzen) {
-        tzHint.textContent = `${this.tx.tzLabel} ${this.tx.tzNone}`;
+      } else if (!this.helper.tzen || this.helper.tzunk) {
+        tzHint.textContent = `${this.tx.tzLabel} ${this.tx.tzNotSet}`;
       } else {
         tzHint.textContent = `${this.tx.tzLabel} ${formatUtcOffset(this.helper.tz / 60)}`;
       }
@@ -1183,9 +1164,6 @@ export class App {
       });
     });
     this.root.querySelector('#inp-tz-select')?.addEventListener('change', () => this.bornFromForm());
-    ['#inp-gmt-h', '#inp-gmt-min', '#inp-gmt-s'].forEach((sel) => {
-      this.root.querySelector(sel)?.addEventListener('change', () => this.bornFromForm());
-    });
     this.root.querySelector('#tz-toggle')?.addEventListener('click', (e) => {
       e.preventDefault();
       this.tzPanelOpen = !this.tzPanelOpen;
@@ -1193,13 +1171,10 @@ export class App {
       if (panel) (panel as HTMLElement).hidden = !this.tzPanelOpen;
       this.updateTzToggleLabel();
     });
-    this.root.querySelectorAll('[data-tz-mode]').forEach((btn) => {
-      btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        this.tzMode = Number((btn as HTMLElement).dataset.tzMode) as TzMode;
-        this.applyTzModeUI();
-        this.bornFromForm();
-      });
+    this.root.querySelector('#tz-omit')?.addEventListener('change', (e) => {
+      this.tzMode = (e.target as HTMLInputElement).checked ? 3 : 1;
+      this.applyTzModeUI();
+      this.bornFromForm();
     });
     for (const sel of ['#inp-text1', '#inp-text2']) {
       const input = this.root.querySelector<HTMLInputElement>(sel);
@@ -1311,22 +1286,13 @@ export class App {
           </div>
           <div id="tz-panel" class="tz-panel" hidden>
             <p class="hint tz-panel-label">${this.tx.tzLabel} <span id="tz-display" class="tz-current"></span></p>
-            <div class="tz-modes">
-              <button type="button" data-tz-mode="1" class="tz-mode-btn active">UTC</button>
-              <button type="button" data-tz-mode="2" class="tz-mode-btn">GMT</button>
-              <button type="button" data-tz-mode="3" class="tz-mode-btn">${this.tx.tzNone}</button>
-              <button type="button" data-tz-mode="4" class="tz-mode-btn">${this.tx.tzUnknown}</button>
-            </div>
-            <div id="tz-area-utc" class="tz-area">
+            <div class="tz-area">
               <select id="inp-tz-select" class="wide">${tzOptions}</select>
             </div>
-            <div id="tz-area-gmt" class="tz-area" hidden>
-              <div class="gmt-grid">
-                <label>${this.tx.hour}<input type="number" id="inp-gmt-h" value="0"></label>
-                <label>${this.tx.min}<input type="number" id="inp-gmt-min" min="0" max="59" value="0"></label>
-                <label>${this.tx.sec}<input type="number" id="inp-gmt-s" min="0" max="59" value="0"></label>
-              </div>
-            </div>
+            <label class="tz-omit">
+              <input type="checkbox" id="tz-omit">
+              <span>${this.tx.tzOmit}</span>
+            </label>
           </div>
         </section>
 

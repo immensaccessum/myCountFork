@@ -86,15 +86,14 @@ html, body {
 }
 
 /* Единая реакция на наведение и клавиатурный фокус для всех интерактивных элементов */
-.nav a, .btn-ghost, .btn-link, .presets button, .tz-mode-btn, .event-arrow,
+.nav a, .btn-ghost, .btn-link, .presets button, .event-arrow,
 .life-nav button, .link-row button, .metrics a {
   transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
 }
 
 .nav a:hover, .btn-ghost:hover, .btn-link:hover,
 .presets button:hover, .event-arrow:hover,
-.life-nav button:not(:disabled):hover, .link-row button:hover,
-.tz-mode-btn:not(.active):hover {
+.life-nav button:not(:disabled):hover, .link-row button:hover {
   border-color: var(--accent);
   color: var(--accent);
 }
@@ -481,53 +480,25 @@ html, body {
   border-radius: 8px;
 }
 
-.tz-modes {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
-}
-
-.tz-mode-btn {
-  padding: 0.35rem 0.75rem;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--card);
-  color: var(--text);
-  cursor: pointer;
-  font: inherit;
-}
-
-.tz-mode-btn.active {
-  background: var(--accent);
-  color: #fff;
-  border-color: var(--accent);
-}
-
 .tz-area {
   margin-top: 0.5rem;
 }
 
-.gmt-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.75rem;
+.tz-area select:disabled {
+  opacity: 0.5;
 }
 
-.gmt-grid label {
+.tz-omit {
   display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
   font-size: 0.9rem;
-  font-weight: 500;
+  cursor: pointer;
 }
 
-.gmt-grid input {
-  padding: 0.4rem;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--card);
-  color: var(--text);
+.tz-omit input {
+  margin-top: 0.15rem;
 }
 
 .tz-display {

@@ -19,6 +19,8 @@ export interface LocaleStrings {
   tzCurrent: string;
   tzNone: string;
   tzUnknown: string;
+  tzOmit: string;
+  tzNotSet: string;
   months: string[];
   metrics: string[];
   search: string;

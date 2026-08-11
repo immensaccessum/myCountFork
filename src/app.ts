@@ -351,9 +351,13 @@ export class App {
       this.localSpec = null;
       this.currentEventEid = ev.id;
       this.eventOffset = 0;
-      this.helper.setBornTime(ev.t, ev.tz, 1, 0, 0, this.tx);
+      // Предустановка — календарная дата: берём стеночное время события (полночь МСК
+      // для «начала сентября» и т.п.) и интерпретируем его в поясе посетителя.
+      const localSec = browserTzOffsetMin() * 60;
+      const t = ev.t + (ev.tz - localSec) * 1000;
+      this.helper.setBornTime(t, localSec, 1, 0, 0, this.tx);
       this.syncTzFormFromHelper();
-      this.syncFormFromBorn(ev.t);
+      this.syncFormFromBorn(t);
     } catch {
       this.eventCatalog = [];
     }

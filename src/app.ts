@@ -36,7 +36,6 @@ import { getLocale } from './i18n';
 import { fetchLandingEvent, fetchPopularLandings } from './lib/landing-pages';
 import { buildIcsFile, downloadIcs, icsFilename, isAnnualFromSpec } from './lib/ics';
 import { deleteSavedCounter, loadSavedCounters, saveCounter, type SavedCounter } from './lib/saved-counters';
-import { eventProgressPct } from './lib/progress';
 import { daysBetween, monthsApprox, parseYmd, ymdLocal } from './lib/days-between';
 import {
   cellFromPoint,
@@ -1410,7 +1409,6 @@ export class App {
     this.renderMetrics();
     this.updateShareLocalLabel();
     this.refreshSharePreview();
-    this.updateProgressBar();
     this.syncAddressBar();
   }
 
@@ -1570,22 +1568,6 @@ export class App {
     this.syncFormFromBorn(t);
     this.navigateTo('counter');
     this.refreshUI();
-  }
-
-  private updateProgressBar(): void {
-    const bar = this.root.querySelector<HTMLElement>('#progress-bar');
-    const fill = this.root.querySelector<HTMLElement>('#progress-fill');
-    const label = this.root.querySelector('#progress-label');
-    if (!bar || !fill || !label) return;
-    if (this.helper.cm >= 0) {
-      bar.hidden = true;
-      label.textContent = '';
-      return;
-    }
-    bar.hidden = false;
-    const pct = eventProgressPct(this.helper.bornTime);
-    fill.style.width = `${pct}%`;
-    label.textContent = this.tx.progressLabel.replace('{pct}', String(pct));
   }
 
   private readLifeFindValue(): number {
@@ -1885,6 +1867,11 @@ export class App {
       const btn = this.root.querySelector('#toggle-settings');
       if (btn) btn.textContent = this.settingsOpen ? this.tx.hideSettings : this.tx.adjustAndGetLink;
     });
+    this.root.querySelector('#open-link')?.addEventListener('click', () => {
+      const url = this.root.querySelector<HTMLInputElement>('#share-link')?.value || this.shareUrl();
+      if (!url) return;
+      window.open(url, '_blank', 'noopener,noreferrer');
+    });
     this.root.querySelector('#copy-link')?.addEventListener('click', async () => {
       const input = this.root.querySelector<HTMLInputElement>('#share-link');
       if (!input) return;
@@ -2123,29 +2110,23 @@ export class App {
               <div id="sub-text" class="sub-text" title="${this.tx.restClickHint}"></div>
             </div>
           </div>
-          <div id="progress-bar" class="progress-bar" hidden>
-            <div id="progress-fill" class="progress-fill"></div>
-          </div>
-          <p id="progress-label" class="progress-label"></p>
           <p id="text2" class="counter-text"></p>
         </section>
 
         <section class="section-life card">
           <p class="hint life-hint">${this.tx.lifeHint}</p>
-          <table id="life-table" class="life-table">
-            <thead>
-              <tr>
-                <th colspan="2">${this.tx.dateHeader}</th>
-                <th class="life-th-search">
-                  <label class="life-search">
-                    <img src="/cimg/001/i/find.png" alt="" width="18" height="18" id="life-find-icon" class="life-find-icon">
-                    <input type="text" id="life-find" class="life-find-input" inputmode="numeric" autocomplete="off" aria-label="${this.tx.search}" placeholder="${this.tx.searchPlaceholder}">
-                  </label>
-                </th>
-              </tr>
-            </thead>
-            <tbody id="life-table-body"></tbody>
-          </table>
+          <div class="life-toolbar">
+            <span class="life-date-heading">${this.tx.dateHeader}</span>
+            <label class="life-search">
+              <img src="/cimg/001/i/find.png" alt="" width="18" height="18" id="life-find-icon" class="life-find-icon">
+              <input type="text" id="life-find" class="life-find-input" inputmode="numeric" autocomplete="off" aria-label="${this.tx.search}" placeholder="${this.tx.searchPlaceholder}">
+            </label>
+          </div>
+          <div class="life-table-wrap">
+            <table id="life-table" class="life-table">
+              <tbody id="life-table-body"></tbody>
+            </table>
+          </div>
           <div class="life-nav">
             <button type="button" id="life-prev">&lt;</button>
             <button type="button" id="life-zero">0</button>
@@ -2184,6 +2165,7 @@ export class App {
             <p id="share-preview" class="share-preview" hidden></p>
             <div class="link-row">
               <input type="text" id="share-link" class="wide" readonly>
+              <button type="button" id="open-link">${this.tx.openLink}</button>
               <button type="button" id="copy-link">${this.tx.copyLink}</button>
               <button type="button" id="copy-og-link">${this.tx.copyTelegram}</button>
               <button type="button" id="add-calendar">${this.tx.addToCalendar}</button>

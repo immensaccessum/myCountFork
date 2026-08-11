@@ -441,16 +441,25 @@ html, body {
   color: #fff;
 }
 
+.life-table-wrap {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 .life-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.9rem;
+  table-layout: fixed;
 }
 
 .life-table th, .life-table td {
   border: 1px solid var(--border);
   padding: 0.4rem 0.5rem;
   text-align: left;
+  word-break: break-word;
 }
 
 .life-table tr.life-table-row--active td {
@@ -471,18 +480,28 @@ html, body {
   font-size: 0.85rem;
 }
 
-.life-th-search {
-  width: 40%;
-  text-align: right;
-  vertical-align: middle;
+.life-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 0.75rem;
+  margin-bottom: 0.75rem;
+  max-width: 100%;
+}
+
+.life-date-heading {
+  font-weight: 600;
+  font-size: 0.95rem;
 }
 
 .life-search {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 0.45rem;
-  width: min(100%, 18rem);
-  margin-left: auto;
+  flex: 1 1 12rem;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .life-find-icon {
@@ -491,8 +510,10 @@ html, body {
 }
 
 .life-find-input {
-  flex: 1;
+  flex: 1 1 auto;
   min-width: 0;
+  width: 100%;
+  max-width: 100%;
   padding: 0.4rem 0.55rem;
   border: 1px solid var(--border);
   border-radius: 6px;
@@ -691,6 +712,14 @@ html, body {
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
+  align-items: center;
+}
+
+.link-row #share-link {
+  flex: 1 1 12rem;
+  min-width: 0;
+  max-width: 100%;
+  height: auto;
 }
 
 .link-row button {
@@ -847,6 +876,12 @@ body[data-mode='4'] .counter-wrap {
 
   .link-row {
     flex-direction: column;
+    align-items: stretch;
+  }
+
+  .link-row #share-link {
+    flex: none;
+    width: 100%;
   }
 
   .counter-row {
@@ -1103,28 +1138,6 @@ body.lifegrid-fullscreen .lifegrid-cell-info--top {
 
 .popular-link:hover {
   text-decoration: underline;
-}
-
-.progress-bar {
-  height: 8px;
-  background: var(--border);
-  border-radius: 4px;
-  overflow: hidden;
-  margin: 0.5rem 0;
-}
-
-.progress-fill {
-  height: 100%;
-  background: var(--accent);
-  width: 0;
-  transition: width 0.3s ease;
-}
-
-.progress-label {
-  font-size: 0.85rem;
-  color: var(--muted);
-  text-align: center;
-  margin: 0.25rem 0;
 }
 
 .qr-modal {

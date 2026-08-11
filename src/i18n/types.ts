@@ -70,6 +70,7 @@ export interface LocaleStrings {
   sharePreviewMoscow: string;
   copyTelegram: string;
   copyLink: string;
+  openLink: string;
   copied: string;
   settingsHeader: string;
   restMode: string;
@@ -136,5 +137,4 @@ export interface LocaleStrings {
   searchPlaceholder: string;
   counterClickHint: string;
   restClickHint: string;
-  progressLabel: string;
 }

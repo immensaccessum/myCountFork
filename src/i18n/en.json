@@ -71,6 +71,7 @@
   "sharePreviewMoscow": "Moscow example: until {date}",
   "copyTelegram": "Short link",
   "copyLink": "Copy",
+  "openLink": "Open",
   "copied": "Copied!",
   "settingsHeader": "Counter settings:",
   "restMode": "Remainder display:",
@@ -111,7 +112,6 @@
   "searchPlaceholder": "e.g. 1000000",
   "counterClickHint": "Click to switch the time unit",
   "restClickHint": "Click to switch the remainder style: decimal fraction or time units",
-  "progressLabel": "{pct}% elapsed since Jan 1 toward the event",
   "footer": "myCount v0.4",
   "adLabel": "Ad"
 }

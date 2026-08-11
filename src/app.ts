@@ -68,13 +68,17 @@ export class App {
   private popularLandings: { slug: string; label: string; href: string }[] = [];
   private counterTheme: CounterTheme = 'default';
   private savedCounters: SavedCounter[] = loadSavedCounters();
+  private landingH1 = '';
+  private landingIntro = '';
 
   constructor(root: HTMLElement) {
     this.root = root;
     this.lang = detectLang(location.pathname);
     this.tx = getLocale(this.lang);
     document.documentElement.lang = this.lang;
-    document.title = this.tx.title;
+    if (!window.__MC_PRESET) {
+      document.title = this.tx.title;
+    }
     this.initTheme();
     this.render();
     this.initFromUrl();
@@ -108,6 +112,11 @@ export class App {
 
   private initFromUrl(): void {
     const preset = window.__MC_PRESET;
+    if (preset?.h1) {
+      this.landingH1 = preset.h1;
+      this.landingIntro = preset.intro || '';
+      this.applyLandingIntro();
+    }
     const url = parseUrlState(location.search);
     this.wm = (preset?.wm as ViewMode) || url.wm;
     if (url.wid) this.eventWid = url.wid;
@@ -268,11 +277,25 @@ export class App {
     this.currentEventEid = ev.id;
     this.text1 = '';
     this.topTextEdited = false;
+    if (!this.landingH1) {
+      this.landingH1 = this.lang === 'ru' ? `Сколько дней до ${ev.name.ru}?` : `How many days until ${ev.name.en}?`;
+      this.landingIntro = ev.desc[this.lang];
+      this.applyLandingIntro();
+    }
     this.helper.setBornTime(ev.t, ev.tz, 1, 0, 0, this.tx);
     const custom1 = this.root.querySelector<HTMLInputElement>('#inp-text1');
     if (custom1 && !custom1.value.trim()) {
       custom1.placeholder = `${ev.name[this.lang]} — ${this.helper.buildDateText(this.tx)}`;
     }
+  }
+
+  private applyLandingIntro(): void {
+    const h1 = this.root.querySelector('#landing-h1');
+    const intro = this.root.querySelector('#landing-intro');
+    const section = this.root.querySelector('.section-landing-intro');
+    if (h1) h1.textContent = this.landingH1;
+    if (intro) intro.textContent = this.landingIntro;
+    if (section) (section as HTMLElement).hidden = !this.landingH1 || this.wm !== 4;
   }
 
   private async loadPopularLandings(): Promise<void> {
@@ -647,6 +670,7 @@ export class App {
     show('.section-header', true);
     show('.section-intro', this.wm === 3);
     show('.section-footer', this.wm !== 4);
+    this.applyLandingIntro();
   }
 
   private appShareUrl(wm: ViewMode = 4): string {
@@ -1046,6 +1070,11 @@ export class App {
             <button type="button" id="theme-toggle" class="btn-ghost">${this.tx.themeToggle}</button>
           </nav>
         </header>
+
+        <section class="section-landing-intro card" hidden>
+          <h1 id="landing-h1"></h1>
+          <p id="landing-intro"></p>
+        </section>
 
         <section class="section-intro card">
           <h1>${this.tx.introTitle}</h1>

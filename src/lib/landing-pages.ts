@@ -29,7 +29,7 @@ export interface LandingEvent {
 
 declare global {
   interface Window {
-    __MC_PRESET?: { eventId?: string; wm?: number };
+    __MC_PRESET?: { eventId?: string; wm?: number; h1?: string; intro?: string };
   }
 }
 

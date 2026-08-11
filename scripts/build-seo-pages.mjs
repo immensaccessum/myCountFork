@@ -61,15 +61,15 @@ function metaBlock(lang, { title, desc, url, altRu, altEn }) {
   <script type="application/ld+json">${jsonLd}</script>`;
 }
 
-function landingPresetScript(eventId) {
-  return `<script>window.__MC_PRESET={eventId:${JSON.stringify(eventId)},wm:4};</script>`;
+function landingPresetScript(def, lang) {
+  const h1 = lang === 'ru' ? def.h1Ru : def.h1En;
+  const intro = lang === 'ru' ? def.bodyRu : def.bodyEn;
+  return `<script>window.__MC_PRESET={eventId:${JSON.stringify(def.id)},wm:4,h1:${JSON.stringify(h1)},intro:${JSON.stringify(intro)}};</script>`;
 }
 
+/** Crawlers without JS still get an H1; visually hidden, no layout shift. */
 function landingSeoBlock(h1, body) {
-  return `<article class="landing-seo" id="landing-seo">
-  <h1>${h1}</h1>
-  <p>${body}</p>
-</article>`;
+  return `<h1 class="sr-only">${h1}</h1>\n  <p class="sr-only">${body}</p>`;
 }
 
 const baseHtml = readFileSync(join(DIST, 'index.html'), 'utf8');
@@ -104,7 +104,7 @@ for (const def of getLandingPageDefs()) {
     const body = lang === 'ru' ? def.bodyRu : def.bodyEn;
     let html = baseHtml.replace('<title>myCount</title>', metaBlock(lang, { title, desc, url, altRu, altEn }));
     html = html.replace('<html lang="ru">', `<html lang="${lang}">`);
-    html = html.replace('<div id="app"></div>', `${landingSeoBlock(h1, body)}\n  <div id="app"></div>\n  ${landingPresetScript(def.id)}`);
+    html = html.replace('<div id="app"></div>', `${landingSeoBlock(h1, body)}\n  <div id="app"></div>\n  ${landingPresetScript(def, lang)}`);
     const outDir = join(DIST, prefix, slug);
     mkdirSync(outDir, { recursive: true });
     writeFileSync(join(outDir, 'index.html'), html);

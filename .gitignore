@@ -2,3 +2,5 @@ node_modules/
 dist/
 server/.cache/
 server/.data/
+/*.csv
+/wordstat*.csv

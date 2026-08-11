@@ -20,6 +20,8 @@
   "tzNone": "does not exist",
   "tzUnknown": "unknown",
   "tzNotSet": "not set",
+  "tzHint": "The date and time above happen in this timezone. Everyone who opens the link reaches zero at the same moment, wherever they are. If you want each visitor to count to this date on their own clock, pick the \"recipient's local time\" option in the settings below.",
+  "lifeHint": "Round numbers: when the counter will show exactly this many seconds, minutes, hours… Click a row to switch the counter to that unit. The arrows browse more values, and the search finds the moment for your own number.",
   "months": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
   "metrics": ["seconds", "minutes", "hours", "days", "weeks", "months", "years"],
   "search": "Search:",

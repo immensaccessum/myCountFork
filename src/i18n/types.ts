@@ -20,6 +20,8 @@ export interface LocaleStrings {
   tzNone: string;
   tzUnknown: string;
   tzNotSet: string;
+  tzHint: string;
+  lifeHint: string;
   months: string[];
   metrics: string[];
   search: string;

@@ -936,9 +936,10 @@ export class App {
       const ev = events[i];
       if (ev) {
         if (ev.efid === this.helper.format) tr.classList.add('life-table-row--active');
+        tr.classList.add('life-table-row--clickable');
         const bs = this.helper.getDateStrEx(ev.es, true, -new Date().getTimezoneOffset() * 60, 0, this.tx);
         tr.innerHTML = `<td>${bs.dm}${this.tx.dateDel}${bs.knywy}</td><td>${bs.fts}<span class="rs">${bs.rs}</span></td><td><strong>${numToStr(ev.ev)}</strong> <a href="#" data-fid="${ev.efid}">${ev.em}</a></td>`;
-        tr.querySelector('a')?.addEventListener('click', (e) => {
+        tr.addEventListener('click', (e) => {
           e.preventDefault();
           this.helper.format = ev.efid;
           this.refreshUI();
@@ -1261,6 +1262,7 @@ export class App {
             <div class="tz-area">
               <select id="inp-tz-select" class="wide">${tzOptions}</select>
             </div>
+            <p class="hint tz-hint">${this.tx.tzHint}</p>
           </div>
         </section>
 
@@ -1283,6 +1285,7 @@ export class App {
         </section>
 
         <section class="section-life card">
+          <p class="hint life-hint">${this.tx.lifeHint}</p>
           <table id="life-table" class="life-table">
             <thead>
               <tr>

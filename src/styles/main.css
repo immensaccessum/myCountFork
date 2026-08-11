@@ -295,6 +295,20 @@ html, body {
   background: color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
+.life-table tr.life-table-row--clickable {
+  cursor: pointer;
+}
+
+.life-table tr.life-table-row--clickable:not(.life-table-row--active):hover td {
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.life-hint {
+  margin: 0 0 0.75rem;
+  line-height: 1.45;
+  font-size: 0.85rem;
+}
+
 .life-th-search {
   width: 40%;
   text-align: right;
@@ -482,6 +496,12 @@ html, body {
 
 .tz-area {
   margin-top: 0.5rem;
+}
+
+.tz-hint {
+  margin: 0.6rem 0 0;
+  line-height: 1.45;
+  font-size: 0.85rem;
 }
 
 .tz-display {

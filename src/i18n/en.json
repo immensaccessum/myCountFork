@@ -19,7 +19,6 @@
   "tzCurrent": "current",
   "tzNone": "does not exist",
   "tzUnknown": "unknown",
-  "tzOmit": "No timezone — just a date, not tied to a place",
   "tzNotSet": "not set",
   "months": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
   "metrics": ["seconds", "minutes", "hours", "days", "weeks", "months", "years"],

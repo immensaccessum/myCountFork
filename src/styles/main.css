@@ -484,23 +484,6 @@ html, body {
   margin-top: 0.5rem;
 }
 
-.tz-area select:disabled {
-  opacity: 0.5;
-}
-
-.tz-omit {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
-  font-size: 0.9rem;
-  cursor: pointer;
-}
-
-.tz-omit input {
-  margin-top: 0.15rem;
-}
-
 .tz-display {
   margin: 0.75rem 0 0;
   font-size: 0.95rem;

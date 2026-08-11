@@ -30,8 +30,6 @@ import {
   browserTzOffsetMin,
   defaultTzPacked,
   formatUtcOffset,
-  inferTzMode,
-  type TzMode,
 } from './lib/tz';
 import { getLocale } from './i18n';
 import { fetchLandingEvent, fetchPopularLandings } from './lib/landing-pages';
@@ -57,7 +55,6 @@ export class App {
   private settingsOpen = false;
   private eventOffset = 0;
   private raf = 0;
-  private tzMode: TzMode = 1;
   private tzPanelOpen = false;
   private shareMode: ShareMode = 'instant';
   private localDateActive = false;
@@ -568,48 +565,28 @@ export class App {
   }
 
   private readTzFromForm(): { tz: number; tzen: number; isGMT: number; tzunk: number } {
-    switch (this.tzMode) {
-      case 3:
-      case 4:
-        return { tz: 0, tzen: 0, isGMT: 0, tzunk: 0 };
-      default: {
-        const min = parseInt(
-          (this.root.querySelector<HTMLSelectElement>('#inp-tz-select')?.value || '0'),
-          10,
-        );
-        return { tz: min * 60, tzen: 1, isGMT: 0, tzunk: 0 };
-      }
-    }
+    const min = parseInt(
+      (this.root.querySelector<HTMLSelectElement>('#inp-tz-select')?.value || '0'),
+      10,
+    );
+    return { tz: min * 60, tzen: 1, isGMT: 0, tzunk: 0 };
   }
 
   private syncTzFormFromHelper(): void {
-    const inferred = inferTzMode(this.helper.tzen, this.helper.isGMT, this.helper.tzunk);
-    // В форме два состояния: пояс из списка или «без пояса». Легаси-режимы старых
-    // ссылок (GMT со смещением, «неизвестен») сводим к ближайшему из них.
-    this.tzMode = inferred === 3 || inferred === 4 ? 3 : 1;
-    if (this.tzMode === 1) {
-      const sel = this.root.querySelector<HTMLSelectElement>('#inp-tz-select');
-      if (sel) {
-        const min = String(Math.round(this.helper.tz / 60));
-        const cur = String(browserTzOffsetMin());
-        if (min === cur) {
-          const browserOpt = sel.querySelector<HTMLOptionElement>('option[data-browser="1"]');
-          if (browserOpt) browserOpt.selected = true;
-        } else {
-          sel.value = min;
-        }
+    // Легаси-режимы старых ссылок (GMT со смещением, «не существует», «неизвестен»)
+    // отображаются движком как раньше; форма же всегда предлагает пояс из списка.
+    const sel = this.root.querySelector<HTMLSelectElement>('#inp-tz-select');
+    if (sel) {
+      const min = String(Math.round(this.helper.tz / 60));
+      const cur = String(browserTzOffsetMin());
+      if (min === cur) {
+        const browserOpt = sel.querySelector<HTMLOptionElement>('option[data-browser="1"]');
+        if (browserOpt) browserOpt.selected = true;
+      } else {
+        sel.value = min;
       }
     }
-    this.applyTzModeUI();
     this.updateTzToggleLabel();
-  }
-
-  private applyTzModeUI(): void {
-    const omitted = this.tzMode === 3 || this.tzMode === 4;
-    const sel = this.root.querySelector<HTMLSelectElement>('#inp-tz-select');
-    if (sel) sel.disabled = omitted;
-    const chk = this.root.querySelector<HTMLInputElement>('#tz-omit');
-    if (chk) chk.checked = omitted;
   }
 
   private updateTextLimitHint(active?: HTMLInputElement): void {
@@ -628,7 +605,7 @@ export class App {
   }
 
   private isBrowserTimezone(): boolean {
-    if (this.tzMode !== 1 || this.helper.tzunk || !this.helper.tzen || this.helper.isGMT) return false;
+    if (this.helper.tzunk || !this.helper.tzen || this.helper.isGMT) return false;
     const sel = this.root.querySelector<HTMLSelectElement>('#inp-tz-select');
     return sel?.selectedOptions[0]?.dataset.browser === '1';
   }
@@ -1171,11 +1148,6 @@ export class App {
       if (panel) (panel as HTMLElement).hidden = !this.tzPanelOpen;
       this.updateTzToggleLabel();
     });
-    this.root.querySelector('#tz-omit')?.addEventListener('change', (e) => {
-      this.tzMode = (e.target as HTMLInputElement).checked ? 3 : 1;
-      this.applyTzModeUI();
-      this.bornFromForm();
-    });
     for (const sel of ['#inp-text1', '#inp-text2']) {
       const input = this.root.querySelector<HTMLInputElement>(sel);
       input?.addEventListener('input', () => {
@@ -1289,10 +1261,6 @@ export class App {
             <div class="tz-area">
               <select id="inp-tz-select" class="wide">${tzOptions}</select>
             </div>
-            <label class="tz-omit">
-              <input type="checkbox" id="tz-omit">
-              <span>${this.tx.tzOmit}</span>
-            </label>
           </div>
         </section>
 

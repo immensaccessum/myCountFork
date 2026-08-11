@@ -58,6 +58,7 @@ export class App {
   private shareMode: ShareMode = 'instant';
   private localDateActive = false;
   private localSpec: LocalDateSpec | null = null;
+  private lastCm = 0;
 
   constructor(root: HTMLElement) {
     this.root = root;
@@ -691,6 +692,11 @@ export class App {
   private loop(): void {
     this.applyLocalBornIfNeeded();
     this.helper.captureTime();
+    // One-time date just passed (or vice versa): flip «осталось» / «прошло» texts live.
+    if (this.helper.cm !== this.lastCm) {
+      this.lastCm = this.helper.cm;
+      this.refreshUI();
+    }
     const mainValue = this.helper.getMainValue();
     this.counter.mv = mainValue;
     this.counter.cm = this.helper.cm;
@@ -975,10 +981,13 @@ export class App {
                 <span id="share-local-label"></span>
               </label>
               <p class="hint">${this.tx.shareLocalHint}</p>
-              <label class="share-annual" id="share-annual-wrap" hidden>
-                <input type="checkbox" id="share-annual" checked>
-                ${this.tx.shareAnnual}
-              </label>
+              <div id="share-annual-wrap" hidden>
+                <label class="share-annual">
+                  <input type="checkbox" id="share-annual" checked>
+                  ${this.tx.shareAnnual}
+                </label>
+                <p class="hint">${this.tx.shareOnceHint}</p>
+              </div>
             </fieldset>
             <p id="share-preview" class="share-preview" hidden></p>
             <div class="link-row">

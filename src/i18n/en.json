@@ -31,6 +31,7 @@
   "shareLocalTemplate": "Until {date} in the recipient's local time",
   "shareLocalHint": "Each person counts to that date and time in their own timezone — great for birthdays.",
   "shareAnnual": "Repeat every year",
+  "shareOnceHint": "Unchecked = one-time date: once it passes, the counter flips to time elapsed.",
   "sharePreviewMoscow": "Moscow example: until {date}",
   "copyTelegram": "Short link",
   "copyLink": "Copy",

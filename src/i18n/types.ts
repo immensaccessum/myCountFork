@@ -30,6 +30,7 @@ export interface LocaleStrings {
   shareLocalTemplate: string;
   shareLocalHint: string;
   shareAnnual: string;
+  shareOnceHint: string;
   sharePreviewMoscow: string;
   copyTelegram: string;
   copyLink: string;

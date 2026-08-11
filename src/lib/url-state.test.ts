@@ -84,6 +84,33 @@ describe('buildAppShareUrl', () => {
     expect(url).not.toContain('tz=');
   });
 
+  it('carries remainder style even when tz is omitted', () => {
+    const url = buildAppShareUrl({
+      basePath: '/ru/',
+      bornTime: 1000,
+      getTZ: () => 65537,
+      format: 4,
+      text1: '',
+      text2: '',
+      omitTz: true,
+      restMode: 1,
+    });
+    expect(url).toContain('rm=1');
+    expect(url).toContain('fid=4');
+    expect(parseUrlState('?' + url.split('?')[1]).rm).toBe(true);
+
+    const noRm = buildAppShareUrl({
+      basePath: '/ru/',
+      bornTime: 1000,
+      getTZ: () => 65537,
+      format: 1,
+      text1: '',
+      text2: '',
+      restMode: 0,
+    });
+    expect(noRm).not.toContain('rm=');
+  });
+
   it('encodes t1 once and round-trips cyrillic text', () => {
     const text = 'от 19 марта 2012 г.';
     const url = buildAppShareUrl({

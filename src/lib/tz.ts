@@ -22,7 +22,8 @@ export function formatUtcOffset(min: number): string {
 
 export function defaultTzPacked(): number {
   const min = browserTzOffsetMin();
-  return (min * 60) | (1 << 16) | (1 << 18);
+  // ent=4 (точность до секунды): наши ссылки всегда несут точный момент.
+  return (min * 60) | (1 << 16) | (4 << 18);
 }
 
 /** Moscow Standard Time (UTC+3), no DST. */

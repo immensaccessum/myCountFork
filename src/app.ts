@@ -139,6 +139,7 @@ export class App {
     }
 
     this.helper = new CounterHelper(born, tz, fid, this.tx, this.lang);
+    if (url.rm) this.helper.restMode = 1;
     const canvas = this.root.querySelector<HTMLCanvasElement>('#counter-canvas')!;
     this.counter = new DigitCounter(canvas, {
       w: 50,
@@ -717,6 +718,7 @@ export class App {
       omitTz: this.isBrowserTimezone(),
       shareMode,
       local: shareMode === 'local' ? this.readFormLocalSpec() : undefined,
+      restMode: this.helper.restMode,
     });
   }
 

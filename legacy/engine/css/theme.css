@@ -1,0 +1,166 @@
+/* Additive styles only — does not override main.css layout */
+
+/* Dark theme (opt-in via button, not auto) */
+[data-theme="dark"] html,
+[data-theme="dark"] body {
+  background: #2a2a2a;
+}
+
+[data-theme="dark"] .mf_container,
+[data-theme="dark"] .mc_cont_header,
+[data-theme="dark"] #mf_sec_text {
+  color: #e8e8e8;
+}
+
+[data-theme="dark"] .mcss_cblack,
+[data-theme="dark"] .mf_counter_area_text,
+[data-theme="dark"] .mf_counter_area_text2 {
+  color: #e0e0e0 !important;
+}
+
+[data-theme="dark"] .mf_input,
+[data-theme="dark"] .mf_input_ba,
+[data-theme="dark"] .mf_text12_inp {
+  background: #3a3a50;
+  color: #eee;
+  border-color: #606080;
+}
+
+/* Theme toggle — small, unobtrusive */
+.mc_theme_btn {
+  border: 1px solid #606080;
+  background: #606080;
+  color: #eee;
+  border-radius: 3px;
+  padding: 2px 8px;
+  cursor: pointer;
+  font-size: 13px;
+  vertical-align: middle;
+}
+
+/* Presets — match original button style */
+.mc_presets {
+  margin: 0 0 12px 15px;
+}
+
+.mc_presets_label {
+  margin: 0 0 6px 15px;
+  font-size: 14px;
+  color: #303030;
+}
+
+.mc_preset_btn {
+  margin: 1px 4px 1px 0;
+  background: #606080;
+  font-size: 13px;
+  color: #eeeeee;
+  padding: 3px 8px;
+  border: 2px solid #606080;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.mc_preset_btn:hover {
+  background: #506080;
+}
+
+/* Copy link button */
+.mc_link_row {
+  display: table;
+  width: 100%;
+  max-width: 650px;
+}
+
+.mc_link_row input {
+  width: 100%;
+}
+
+.mc_link_row .mc_preset_btn {
+  margin-top: 6px;
+}
+
+/* Ad slot — hidden until you add real ad code */
+.mc_ad_slot {
+  display: none;
+}
+
+.mc_ad_slot.mc_ad_enabled {
+  display: block;
+  min-height: 90px;
+  margin: 12px 15px;
+  max-width: 770px;
+  border: 1px dashed #808080;
+  text-align: center;
+  color: #808080;
+  font-size: 13px;
+  padding: 20px;
+}
+
+/* Embed mode */
+body[data-mode="4"] #mf_top_logo,
+body[data-mode="4"] #section_intro,
+body[data-mode="4"] #section_editor,
+body[data-mode="4"] #section_events,
+body[data-mode="4"] #section_life_table,
+body[data-mode="4"] #section_ad,
+body[data-mode="4"] #counterSettingsBut,
+body[data-mode="4"] .mc_footer_extra,
+body[data-mode="4"] .mc_presets {
+  display: none !important;
+}
+
+/* Mobile — only narrow screens */
+@media (max-width: 820px) {
+  #mf_main {
+    width: 100%;
+  }
+
+  #mf_main_holder,
+  #mf_content,
+  #mf_top_logo,
+  .mf_container,
+  .mf_counter_area,
+  .mf_counter_area_counter,
+  #main_counter_canvas {
+    width: 100% !important;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  #mf_top_logo td {
+    display: block;
+    text-align: left;
+    padding: 4px 0;
+  }
+
+  #mf_sec_text {
+    position: static !important;
+    top: auto !important;
+    margin-top: 4px;
+    border-left: none;
+    padding-left: 0;
+    text-align: center;
+  }
+
+  .mc_ytable_d,
+  .mc_ytable_t,
+  .mc_ytable_v {
+    display: block;
+    width: auto !important;
+  }
+
+  #mf_yt_bbtm {
+    margin-left: 0 !important;
+    text-align: center;
+  }
+
+  .mf_text12_inp {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  #mf_find_val {
+    width: 200px !important;
+  }
+}

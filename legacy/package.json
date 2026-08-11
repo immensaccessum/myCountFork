@@ -1,0 +1,12 @@
+{
+  "name": "mycount-fork",
+  "version": "0.3.0",
+  "private": true,
+  "description": "Static fork of the myCount.org time counter",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "start": "npm run build && python3 -m http.server 3000",
+    "dev": "python3 -m http.server 3000"
+  }
+}

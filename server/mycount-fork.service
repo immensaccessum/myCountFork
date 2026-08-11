@@ -1,0 +1,13 @@
+[Unit]
+Description=myCount Fork API and Open Graph server
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/mycount-fork
+ExecStart=/usr/bin/node server/server.mjs 5199
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

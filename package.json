@@ -1,12 +1,22 @@
 {
   "name": "mycount-fork",
-  "version": "0.3.0",
-  "private": true,
-  "description": "Static fork of the myCount.org time counter",
+  "version": "1.0.0",
+  "private": false,
+  "license": "SEE LICENSE IN LICENSE",
   "type": "module",
   "scripts": {
-    "build": "node scripts/build.mjs",
-    "start": "npm run build && python3 -m http.server 3000",
-    "dev": "python3 -m http.server 3000"
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "server": "node server/server.mjs",
+    "og": "node server/server.mjs",
+    "test": "vitest run",
+    "deploy": "bash scripts/deploy.sh",
+    "dev:legacy": "python3 -m http.server 8081 --directory legacy"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3",
+    "vite": "^6.0.7",
+    "vitest": "^3.0.5"
   }
 }

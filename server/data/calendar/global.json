@@ -1,0 +1,32 @@
+{
+  "history": [
+    {
+      "id": "history:sputnik",
+      "at": "1957-10-04T19:28:34.000Z",
+      "name": { "ru": "Запуск «Спутника-1»", "en": "Sputnik-1 launch" },
+      "desc": {
+        "ru": "4 октября 1957 года — начало космической эры.",
+        "en": "October 4, 1957 — the dawn of the space age."
+      }
+    },
+    {
+      "id": "history:moon-landing",
+      "at": "1969-07-20T20:17:40.000Z",
+      "name": { "ru": "Высадка на Луну (Apollo 11)", "en": "Moon landing (Apollo 11)" },
+      "desc": {
+        "ru": "20 июля 1969 года — первые шаги человека на Луне.",
+        "en": "July 20, 1969 — first human steps on the Moon."
+      }
+    },
+    {
+      "id": "history:unix-epoch",
+      "at": "1970-01-01T00:00:00.000Z",
+      "name": { "ru": "Unix epoch", "en": "Unix epoch" },
+      "desc": {
+        "ru": "1 января 1970, 00:00 UTC — точка отсчёта Unix time.",
+        "en": "January 1, 1970, 00:00 UTC — the Unix epoch."
+      }
+    }
+  ],
+  "annual": []
+}

@@ -2,55 +2,62 @@
 
 Форк ныне неработающего [myCount.org](https://mycount.org) — счётчика времени до заданной даты.
 
-## Запуск
+## Запуск (новая версия — Vite + TypeScript)
 
 ```bash
-npm start        # сборка + сервер на :3000
-npm run build    # только пересобрать HTML из шаблона
-npm run dev      # сервер без сборки
+npm install
+npm run dev          # http://localhost:5173/ru/
+npm run build        # сборка в dist/
+npm run preview      # предпросмотр production-сборки
+npm test             # vitest
 ```
 
-- Русский: http://localhost:3000/ru/
-- English: http://localhost:3000/en/
+- Русский: http://localhost:5173/ru/
+- English: http://localhost:5173/en/
 - События: `?wm=1`
 - Редактор: `?wm=3`
 - Embed (только счётчик): `?wm=4&t=…&tz=…&fid=…`
 
-## Возможности (v0.3)
+## Legacy (оригинальная v0.3, архив)
+
+Полная копия старой версии сохранена в `legacy/` и не изменяется:
+
+```bash
+npm run dev:legacy   # http://localhost:8081/ru/
+```
+
+## Возможности (v1.0)
 
 - **Ближайшие события** — пресеты (Спутник, Луна, Новый год, круглые секунды…)
 - **Режим embed** — ссылка без формы ввода
 - **Копировать ссылку** — кнопка в настройках
 - **Быстрые даты** — сейчас, +1 час, завтра, Новый год, 100M сек
-- **Тёмная тема** — кнопка ◐, запоминается в localStorage
-- **Мобильная вёрстка** — адаптив до 480px
-- **Один шаблон** — `src/template.html` + `src/i18n/*.json` → `npm run build`
-- **Один движок** — `engine/` (старые 024/030 удалены)
+- **Тёмная тема** — кнопка в шапке, запоминается в localStorage
+- **Мобильная вёрстка** — адаптивная сетка
+- **Совместимость URL** — формат `?wm=4&t=…&tz=…` сохранён
 
 ## Структура
 
 ```
-src/template.html    — единый HTML-шаблон
-src/i18n/ru.json     — строки RU
-src/i18n/en.json     — строки EN
-scripts/build.mjs    — сборка страниц
-engine/              — JS/CSS движка счётчика
-engine/script/app.js — тема, пресеты, режимы (современный JS)
+src/                 — Vite + TypeScript приложение
+  lib/               — движок дат, URL, canvas-счётчик
+  i18n/              — ru/en строки
+  styles/            — CSS с переменными темы
+legacy/              — замороженная копия v0.3 (HTML + engine/)
+public/cimg/         — спрайты цифр и иконки
 ```
-
-## Реклама
-
-В шаблоне есть placeholder `.mc_ad_slot` — подключите AdSense или другую сеть в `src/template.html`, затем `npm run build`.
 
 ## Лицензия
 
-**MIT** — см. [LICENSE](LICENSE). Можно форкать, публиковать, монетизировать рекламой.
+**Некоммерческая** с исключением для правообладателя — см. [LICENSE](LICENSE).
 
-Исключение: `engine/script/excanvas.compiled.js` — Apache 2.0 (Google).
+- Можно использовать, форкать и дорабатывать **бесплатно и некоммерчески**
+- **Коммерческое использование** (продажа, платный доступ, реклама как основной продукт и т.п.) — только у автора (Alexey / [immensaccessum](https://github.com/immensaccessum))
 
-Оригинальный бренд myCount.org принадлежал Internet Invest, Ltd. Для коммерческого использования их торговой марки — отдельное разрешение.
+Оригинальный бренд myCount.org принадлежал Internet Invest, Ltd.
 
-## Дальше (план)
+## Деплой
 
-- GitHub Pages / ваш сервер
-- PWA (manifest + service worker)
+```bash
+npm run deploy   # сборка + rsync на app4.letovrf.ru
+```

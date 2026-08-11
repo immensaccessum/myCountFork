@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>myCount — time counter to a date</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" type="text/css" href="../engine/css/main.css">
+	<link rel="stylesheet" type="text/css" href="../engine/css/theme.css">
+	<link rel="icon" href="../favicon.ico" type="image/x-icon">
+	<link rel="shortcut icon" href="../favicon.ico" type="image/x-icon">
+	<script src="../engine/script/pre.js"></script>
+</head>
+<body>
+	<div class="mf_bg_left"><canvas class="mf_bg_left" id="mf_bg_canvas"></canvas></div>
+	<div id="mf_main">
+		<div id="mf_main_holder">
+		<div id="mf_content">
+<div style="height:20px"></div>
+<table id="mf_top_logo"><tr>
+	<td style="padding-left:5px"><a href="/en/"><img id="mf_logo" class="mf_logo_img" src="../cimg/001/i/logo.png" alt="myCount time counter"/></a></td>
+	<td>
+	&nbsp;&nbsp;|&nbsp;&nbsp;<a href="https://github.com/elite-nick/myCount_fork">Github</a>
+	&nbsp;&nbsp;|&nbsp;&nbsp;<a href="/en/?wm=1">Upcoming events</a>
+	&nbsp;&nbsp;|&nbsp;&nbsp;<a href="/en/?wm=3">New counter</a>
+	</td>
+	<td style="text-align:right; white-space:nowrap">
+		<button type="button" id="theme_toggle" class="mc_theme_btn" title="Theme">◐</button>
+		<a href="/ru/"><img src="../cimg/001/i/ru.png" alt="ru"/></a>
+		<a href="/en/"><img src="../cimg/001/i/en.png" alt="en"/></a>
+	</td>
+</tr></table>
+<div style="height:20px"></div>
+
+<div id="section_ad" class="mc_ad_slot" data-ad-slot="banner-top">Ad</div>
+
+<div id="section_intro" class="mf_container">
+	<h2><a class="mcss_cblack" href="/en/?wm=3&inv=4&fid=1">How many seconds until a given date?</a></h2>Enter a date and time below. myCount shows the remaining time in seconds, minutes, hours, days, and more.
+</div>
+
+<div id="section_editor">
+<div class="mc_cont_header">Date and time:</div>
+<div class="mf_container">
+	<p class="mc_presets_label"><strong>Quick dates:</strong></p>
+	<div class="mc_presets">
+		<button type="button" class="mc_preset_btn" data-preset="now">Now</button>
+		<button type="button" class="mc_preset_btn" data-preset="hour">+1 hour</button>
+		<button type="button" class="mc_preset_btn" data-preset="tomorrow">Tomorrow</button>
+		<button type="button" class="mc_preset_btn" data-preset="newyear">New Year</button>
+		<button type="button" class="mc_preset_btn" data-preset="100m">100M sec</button>
+	</div>
+	<table><tr>
+	<td class="mc_input_label mc_first_td"><a href="/en/?wm=3&inv=2&fid=7" onclick="return setFocusById('mf_ba_y', true)">Year:</a></td>
+	<td class="mc_2_td"><input id="mf_ba_y" class="mf_input_ba" type="text"></td>
+	<td class="mc_input_label mc_3_td"><a href="/en/?wm=3&inv=2&fid=6" onclick="return setFocusById('mf_ba_m', true)">Month:</a></td>
+	<td class="mc_2_td"><select id="mf_ba_m" class="mf_input_ba">
+			<option value="0">January</option>
+			<option value="1">February</option>
+			<option value="2">March</option>
+			<option value="3">April</option>
+			<option value="4">May</option>
+			<option value="5">June</option>
+			<option value="6">July</option>
+			<option value="7">August</option>
+			<option value="8">September</option>
+			<option value="9">October</option>
+			<option value="10">November</option>
+			<option value="11">December</option>
+		</select></td>
+	<td class="mc_input_label mc_3_td"><a href="/en/?wm=3&inv=2&fid=5" onclick="return setFocusById('mf_ba_d', true)">Day:</a></td>
+	<td class="mc_2_td"><input id="mf_ba_d" class="mf_input_ba" type="text"></td>
+	</tr><tr>
+	<td class="mc_input_label"><a href="/en/?wm=3&inv=2&fid=3" onclick="return setFocusById('mf_ba_h', true)">H:</a></td><td>
+	<input id="mf_ba_h" class="mf_input_ba" type="text" value="0" onfocus="prAr.eset('mf_ba_h_en', 1)">
+	<a class="timeClBtn" href="#" onclick="mf_ba_h_cc(); return prAr.etouch('born_date');"><img id="mf_ba_h_close" src="../cimg/001/i/close.png"/></a>
+	</td>
+	<td class="mc_input_label"><a href="/en/?wm=3&inv=2&fid=2" onclick="return setFocusById('mf_ba_min', true)">M:</a></td><td>
+	<input id="mf_ba_min" class="mf_input_ba" type="text" value="0" onfocus="prAr.eset('mf_ba_min_en', 1); prAr.eset('mf_ba_h_en', 1)">
+	<a id="mf_ba_min_close" class="timeClBtn" href="#" onclick="mf_ba_min_cc(); return prAr.etouch('born_date');"><img src="../cimg/001/i/close.png"/></a>
+	</td>
+	<td class="mc_input_label"><a href="/en/?wm=3&inv=2&fid=1" onclick="return setFocusById('mf_ba_s', true)">S:</a></td><td>
+	<input id="mf_ba_s" class="mf_input_ba" type="text" value="0" onfocus="prAr.eset('mf_ba_s_en', 1); prAr.eset('mf_ba_min_en', 1); prAr.eset('mf_ba_h_en', 1)">
+	<a id="mf_ba_s_close" class="timeClBtn" href="#" onclick="mf_ba_s_cc(); return prAr.etouch('born_date');"><img src="../cimg/001/i/close.png"/></a>
+	</td>
+	</tr></table>
+	<table><tr>
+	<td class="mc_input_label mc_tzLabel_td">Time zone:</td>
+	<td><span id="mf_ba_tz_disp" style="font-size: 15px; font-weight: bold;"></span>
+	<ul class="mc_but_line" style="display:inline; padding-left:15px"><li><a id="mf_ba_tz_but" href="#" onclick="return prAr.einv('mf_ba_tz_tgl')"></a></li></ul>
+	</td></tr></table>
+	<table id="mf_ba_tz_set_tbl" style="display:none"><tr>
+	<td class="mc_input_label mc_first_td">&nbsp;</td>
+	<td><ul class="mc_ch_line">
+		<li><a href="#" onclick="return prAr.eset('mf_ba_tz_mode',1)" id="mf_ba_tz_tog_1">UTC</a></li>
+		<li><a href="#" onclick="return prAr.eset('mf_ba_tz_mode',2)" id="mf_ba_tz_tog_2">GMT</a></li>
+		<li><a href="#" onclick="return prAr.eset('mf_ba_tz_mode',3)" id="mf_ba_tz_tog_3">does not exist</a></li>
+		<li><a href="#" onclick="return prAr.eset('mf_ba_tz_mode',4)" id="mf_ba_tz_tog_4">unknown</a></li>
+	</ul></td></tr><tr><td></td><td>
+		<div id="mf_ba_tz_area1"><select id="mf_ba_tz" class="mf_input">
+			<option value="0" id="mf_ba_tz_cur">current</option>
+			<option value="-720">(UTC -12:00)</option><option value="-660">(UTC -11:00)</option>
+			<option value="-600">(UTC -10:00)</option><option value="-540">(UTC -09:00)</option>
+			<option value="-480">(UTC -08:00)</option><option value="-420">(UTC -07:00)</option>
+			<option value="-360">(UTC -06:00)</option><option value="-300">(UTC -05:00)</option>
+			<option value="-270">(UTC -04:30)</option><option value="-240">(UTC -04:00)</option>
+			<option value="-210">(UTC -03:30)</option><option value="-180">(UTC -03:00)</option>
+			<option value="-120">(UTC -02:00)</option><option value="-60">(UTC -01:00)</option>
+			<option value="0">(UTC)</option><option value="60">(UTC +01:00)</option>
+			<option value="120">(UTC +02:00)</option><option value="180">(UTC +03:00)</option>
+			<option value="210">(UTC +03:30)</option><option value="240">(UTC +04:00)</option>
+			<option value="270">(UTC +04:30)</option><option value="300">(UTC +05:00)</option>
+			<option value="330">(UTC +05:30)</option><option value="345">(UTC +05:45)</option>
+			<option value="360">(UTC +06:00)</option><option value="390">(UTC +06:30)</option>
+			<option value="420">(UTC +07:00)</option><option value="480">(UTC +08:00)</option>
+			<option value="540">(UTC +09:00)</option><option value="570">(UTC +09:30)</option>
+			<option value="600">(UTC +10:00)</option><option value="660">(UTC +11:00)</option>
+			<option value="720">(UTC +12:00)</option><option value="780">(UTC +13:00)</option>
+		</select></div>
+		<div id="mf_ba_tz_area2">
+			H:<input class="mf_input_ba" type="text" value="0" id="mf_ba_gmt_h">
+			M:<input class="mf_input_ba" type="text" value="0" id="mf_ba_gmt_min">
+			S:<input class="mf_input_ba" type="text" value="0" id="mf_ba_gmt_s">
+		</div>
+	</td></tr></table>
+</div>
+</div>
+
+<div id="section_events" class="mf_container" style="display:none">
+	<h2><table class="mf_born_area_info"><tr>
+		<td class="mf_born_area_info_btn"><a href="#" id="mf_event_prev"><img src="../cimg/001/i/prev.png" alt="prev"></a></td>
+		<td><div class="mf_born_area_date">
+			<div class="mf_born_area_date_year" id="mb_ba_dy"></div>
+			<div class="mf_born_area_date_day" id="mb_ba_dd"></div>
+			<div class="mf_born_area_date_time" id="mb_ba_dt"></div>
+		</div></td>
+		<td class="mcss_p15px" id="mf_event_desc"></td>
+		<td class="mf_born_area_info_btn"><a href="#" id="mf_event_next"><img src="../cimg/001/i/next.png" alt="next"></a></td>
+	</tr></table></h2>
+</div>
+
+<script>
+MCGL.tinpmodAddEdit('mf_ba_y', 'born_date');
+MCGL.tinpmodAddEdit('mf_ba_m', 'born_date');
+MCGL.tinpmodAddEdit('mf_ba_d', 'born_date');
+MCGL.tinpmodAddEdit('mf_ba_h', 'born_date');
+MCGL.tinpmodAddEdit('mf_ba_min', 'born_date');
+MCGL.tinpmodAddEdit('mf_ba_s', 'born_date');
+MCGL.tinpmodAddEdit('mf_ba_gmt_h', 'born_date');
+MCGL.tinpmodAddEdit('mf_ba_gmt_min', 'born_date');
+MCGL.tinpmodAddEdit('mf_ba_gmt_s', 'born_date');
+prAr.add('mf_ba_h_en',null,null,function(){MCGL.tinpmodEnProc('mf_ba_h');},function(){return ['born_date'];});
+function mf_ba_h_cc(){prAr.set('mf_ba_h_en',0);prAr.set('mf_ba_min_en',0);prAr.set('mf_ba_s_en',0);return prAr.end();}
+prAr.add('mf_ba_min_en',null,null,function(){MCGL.tinpmodEnProc('mf_ba_min');},function(){return ['born_date'];});
+function mf_ba_min_cc(){prAr.set('mf_ba_min_en',0);prAr.set('mf_ba_s_en',0);return prAr.end();}
+prAr.add('mf_ba_s_en',null,null,function(){MCGL.tinpmodEnProc('mf_ba_s');},function(){return ['born_date'];});
+function mf_ba_s_cc(){prAr.set('mf_ba_s_en',0);return prAr.end();}
+var mf_ba_tz_toggle = new buttonArray('mf_ba_tz_tog_', 1, 4);
+prAr.add('mf_ba_tz_mode', null, null, function(pr){
+	mf_ba_tz_toggle.val = 'mf_ba_tz_tog_' + pr.av; mf_ba_tz_toggle.refreshStyle();
+	switch(pr.av){case 1: hideById('mf_ba_tz_area2'); showById('mf_ba_tz_area1'); break;
+	case 2: hideById('mf_ba_tz_area1'); showById('mf_ba_tz_area2'); break; case 3: case 4: hideById('mf_ba_tz_area1'); hideById('mf_ba_tz_area2');}
+}, function(){return ['born_date'];});
+prAr.add('mf_ba_tz',null,null,null,function(){return ['born_date'];});
+prAr.add('mf_ba_tz_tgl',null,null,function(pr){
+	var tzButText = pr.av ? tx.hideSettings : tx.change;
+	if (pr.av) showById('mf_ba_tz_set_tbl'); else hideById('mf_ba_tz_set_tbl');
+	setInnerHTML('mf_ba_tz_but', tzButText);
+}, null);
+</script>
+
+<div class="mf_counter_area" id="mf_c_area">
+	<h1><span class="mf_counter_area_text" id="mf_text1"></span></h1>
+	<div style="height:20px"></div>
+	<ul class="mc_ch_line" id="main_metric_ul">
+			<li><a href="/en/?wm=3&inv=3&fid=1" onclick="return prAr.eset('main_metric',1)" id="mf_met_tog_1">seconds</a></li>
+			<li><a href="/en/?wm=3&inv=3&fid=2" onclick="return prAr.eset('main_metric',2)" id="mf_met_tog_2">minutes</a></li>
+			<li><a href="/en/?wm=3&inv=3&fid=3" onclick="return prAr.eset('main_metric',3)" id="mf_met_tog_3">hours</a></li>
+			<li><a href="/en/?wm=3&inv=3&fid=4" onclick="return prAr.eset('main_metric',4)" id="mf_met_tog_4">days</a></li>
+			<li><a href="/en/?wm=3&inv=3&fid=5" onclick="return prAr.eset('main_metric',5)" id="mf_met_tog_5">weeks</a></li>
+			<li><a href="/en/?wm=3&inv=3&fid=6" onclick="return prAr.eset('main_metric',6)" id="mf_met_tog_6">months</a></li>
+			<li><a href="/en/?wm=3&inv=3&fid=7" onclick="return prAr.eset('main_metric',7)" id="mf_met_tog_7">years</a></li>
+	</ul>
+	<h1>
+		<canvas class="mf_counter_area_counter" id="main_counter_canvas" width="800px" height="85px" onclick="return prAr.eset('main_metric', prAr.get('main_metric') + 1)"></canvas>
+		<div id="mf_sec_text"></div>
+		<span class="mf_counter_area_text2" id="mf_text2"></span>
+	</h1>
+</div>
+
+<div id="section_life_table" class="mf_container">
+<table>
+	<tr><td></td><td></td><td><img src="../cimg/001/i/find.png" alt="Search:" style="margin-left:10px;margin-right:10px;" id="mf_find_val_img"/><input type="text" class="mf_text12_inp mc_blue_bg" id="mf_find_val" style="width:350px;position:relative;top:-5px;" onchange="cahngeBornDateEvent()" onfocus="cahngeBornDateTimer(true)" onblur="hc_enable_life_table=false"/></td></tr>
+	<tr><td class="mc_ytable_d" id="mc_ytable_d_0"></td><td class="mc_ytable_t" id="mc_ytable_t_0"></td><td class="mc_ytable_v" id="mc_ytable_v_0"></td></tr>
+	<tr><td class="mc_ytable_d" id="mc_ytable_d_1"></td><td class="mc_ytable_t" id="mc_ytable_t_1"></td><td class="mc_ytable_v" id="mc_ytable_v_1"></td></tr>
+	<tr><td class="mc_ytable_d" id="mc_ytable_d_2"></td><td class="mc_ytable_t" id="mc_ytable_t_2"></td><td class="mc_ytable_v" id="mc_ytable_v_2"></td></tr>
+	<tr><td class="mc_ytable_d" id="mc_ytable_d_3"></td><td class="mc_ytable_t" id="mc_ytable_t_3"></td><td class="mc_ytable_v" id="mc_ytable_v_3"></td></tr>
+	<tr><td class="mc_ytable_d" id="mc_ytable_d_4"></td><td class="mc_ytable_t" id="mc_ytable_t_4"></td><td class="mc_ytable_v" id="mc_ytable_v_4"></td></tr>
+	<tr><td class="mc_ytable_d" id="mc_ytable_d_5"></td><td class="mc_ytable_t" id="mc_ytable_t_5"></td><td class="mc_ytable_v" id="mc_ytable_v_5"></td></tr>
+	<tr><td class="mc_ytable_d" id="mc_ytable_d_6"></td><td class="mc_ytable_t" id="mc_ytable_t_6"></td><td class="mc_ytable_v" id="mc_ytable_v_6"></td></tr>
+</table>
+<div id="mf_yt_bbtm" style="margin-left: 650px;"></div>
+</div>
+
+<div id="section_settings">
+<div id="counterSettingsBut" style="padding-bottom: 20px"></div>
+<div id="counterSettingsPad" style="display:none">
+<div class="mc_cont_header">Counter link:</div>
+<div class="mf_container">
+	<table style="width:800px">
+		<tr><td class="mf_bat_label mc_setting_td">
+			<a id="mf_bat_label_link" href="#" class="mc_underline">Counter link:</a>
+			</td><td id="mf_link_view">
+			<input type="text" class="mf_text12_inp" id="mf_bat_label_area" readonly/>
+			<button type="button" id="mf_copy_link_btn" class="mc_preset_btn" style="margin-left:8px">Copy</button>
+		</td></tr>
+		<tr><td></td><td><small>Share this link to open the counter with your settings.</small></td></tr>
+	</table>
+</div>
+<div class="mc_cont_header">Counter settings:</div>
+<table class="mf_container" style="width:800px">
+	<tr><td class="mf_bat_label">Remainder display:</td><td>
+		<ul class="mc_ch_line">
+		<li><a href="#" onclick="return prAr.eset('cnt_rm',0)" id="mf_cnt_rm_0">decimal fraction</a></li>
+		<li><a href="#" onclick="return prAr.eset('cnt_rm',1)" id="mf_cnt_rm_1">time units</a></li>
+		</ul>
+	</td></tr>
+	<tr><td class="mf_bat_label">Top text:</td><td><input id="mf_cust_text1" type="text" class="mf_text12_inp"/></td></tr>
+	<tr><td class="mf_bat_label">Bottom text:</td><td><input id="mf_cust_text2" type="text" class="mf_text12_inp"/></td></tr>
+</table>
+</div>
+</div>
+
+<script>
+prAr.addInput('mf_cust_text1', 'born_date');
+prAr.addInput('mf_cust_text2', 'born_date');
+window.MC_STRINGS = {"lang":"en","title":"myCount — time counter to a date","logoAlt":"myCount time counter","navEvents":"Upcoming events","navNew":"New counter","themeToggle":"Theme","introTitle":"How many seconds until a given date?","introText":"Enter a date and time below. myCount shows the remaining time in seconds, minutes, hours, days, and more.","dateHeader":"Date and time:","year":"Year:","month":"Month:","day":"Day:","hour":"H:","min":"M:","sec":"S:","tzLabel":"Time zone:","tzCurrent":"current","tzNone":"does not exist","tzUnknown":"unknown","months":["January","February","March","April","May","June","July","August","September","October","November","December"],"metrics":["seconds","minutes","hours","days","weeks","months","years"],"search":"Search:","linkHeader":"Counter link:","linkLabel":"Counter link:","linkHint":"Share this link to open the counter with your settings.","copyLink":"Copy","copied":"Copied!","settingsHeader":"Counter settings:","restMode":"Remainder display:","restDecimal":"decimal fraction","restUnits":"time units","topText":"Top text:","bottomText":"Bottom text:","presetsLabel":"Quick dates:","presetNow":"Now","presetHour":"+1 hour","presetTomorrow":"Tomorrow","presetNewYear":"New Year","preset100m":"100M sec","footer":"myCount Fork v0.3","adLabel":"Ad"};
+</script>
+<script src="../engine/en/script/txt.js"></script>
+<script src="../engine/script/hc.js"></script>
+<script src="../engine/script/events.js"></script>
+<script>
+var hc_event_result = false;
+var hc_rf = '../engine/';
+var hc_ind = '/en/';
+var hc_vm = 3;
+var hc_event_wid = 1;
+var hc_text1 = '';
+var hc_text2 = '';
+var hc_sub_text_shift = (hc_browser_id == 1) ? 50 : 0;
+var hc_constimg_path = '../cimg/001/';
+var hc_bornTime = 1332104400000;
+var hc_time_z = 0;
+var hc_event_fid = 1;
+var hc_input_en = '#FFFFBB';
+var hc_input_dis = '#C0C0C0';
+var hc_count_obj = {};
+var hc_count_h = 85;
+var pre_hamlet = 0;
+var hc_lang = 'en';
+var mcInVar = { cnt_w: 800, cnt_h: 85, enMainMetric: 1, enText1: 1, enText2: 1 };
+(function initDefaultDate(){
+	var d = new Date(); d.setDate(d.getDate() + 1); d.setHours(0,0,0,0);
+	document.getElementById('mf_ba_y').value = d.getFullYear();
+	document.getElementById('mf_ba_m').value = d.getMonth();
+	document.getElementById('mf_ba_d').value = d.getDate();
+})();
+</script>
+<script src="../engine/counters/default.js"></script>
+<script src="../engine/script/frame.js"></script>
+<script src="../engine/script/app.js"></script>
+
+<div style="height:60px"></div>
+<div class="mf_container mc_footer_extra" style="border-top: 2px solid var(--mc-border);">
+	myCount Fork v0.3
+</div>
+		</div>
+		</div>
+	</div>
+</body>
+</html>

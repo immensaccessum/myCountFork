@@ -1,0 +1,56 @@
+{
+  "history": [
+    {
+      "id": "history:ref-2022",
+      "at": "2022-02-24T03:00:00.000Z",
+      "tz": 10800,
+      "name": { "ru": "24 февраля 2022 года", "en": "February 24, 2022" },
+      "desc": {
+        "ru": "Дата, которую многие отслеживают как точку отсчёта.",
+        "en": "A date many people track as a point of reference."
+      }
+    }
+  ],
+  "annual": [
+    {
+      "id": "annual:knowledge-day",
+      "month": 9,
+      "day": 1,
+      "name": { "ru": "День знаний", "en": "Knowledge Day" },
+      "desc": {
+        "ru": "1 сентября — начало учебного года в России (полночь, МСК).",
+        "en": "September 1 — the first day of school in Russia (midnight MSK)."
+      }
+    },
+    {
+      "id": "annual:children-day",
+      "month": 6,
+      "day": 1,
+      "name": { "ru": "День защиты детей", "en": "International Children's Day" },
+      "desc": {
+        "ru": "1 июня — Международный день защиты детей.",
+        "en": "June 1 — International Children's Day."
+      }
+    },
+    {
+      "id": "annual:valentines",
+      "month": 2,
+      "day": 14,
+      "name": { "ru": "День святого Валентина", "en": "Valentine's Day" },
+      "desc": {
+        "ru": "14 февраля — неофициальный праздник.",
+        "en": "February 14 — an informal celebration."
+      }
+    },
+    {
+      "id": "annual:student-day",
+      "month": 1,
+      "day": 25,
+      "name": { "ru": "Татьянин день", "en": "Students' Day (Tatiana Day)" },
+      "desc": {
+        "ru": "25 января — День российского студенчества.",
+        "en": "January 25 — Russian Students' Day."
+      }
+    }
+  ]
+}

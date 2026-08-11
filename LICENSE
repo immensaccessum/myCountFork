@@ -1,18 +1,36 @@
-MIT License
+myCount Fork — Non-Commercial License (with owner commercial exception)
 
-Copyright (c) 2024-2026 myCount Fork contributors
+Copyright (c) 2024-2026 Alexey (immensaccessum@gmail.com, GitHub: immensaccessum)
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+All rights reserved.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+Permission is granted to any person to use, copy, modify, and distribute
+this software and its source code for NON-COMMERCIAL purposes only,
+subject to the following conditions:
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+1. Commercial use is prohibited for everyone except the copyright holder
+   named above (“the Owner”).
+
+2. “Commercial use” means any use that is primarily intended for or
+   directed toward commercial advantage or monetary compensation, including
+   without limitation:
+   - selling, licensing, or sublicensing the Software or derivative works;
+   - offering paid access to the Software or a service built on it;
+   - displaying advertising or sponsorship where the Software is the main
+     product or a substantial part of the offering;
+   - using the Software inside a product or service sold for profit, without
+     the Owner’s written permission.
+
+3. The Owner retains the exclusive right to commercial use, monetization,
+   advertising, and commercial sublicensing of this Software and derivative
+   works.
+
+4. Redistributions must retain this license and the copyright notice.
+
+5. Third-party components bundled in this repository may be subject to their
+   own licenses (see notices below).
+
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
@@ -24,10 +42,6 @@ SOFTWARE.
 
 Third-party components:
 
-- engine/script/excanvas.compiled.js — Apache License 2.0 (Google Inc.)
-- Original myCount.org UI/engine concept — archival fork; commercial use of
-  original branding may require separate clearance.
-
-Advertising: this license does not restrict monetization (ads, sponsorship).
-You may run ads in deployments of this fork. Fork contributors do not provide
-ad network accounts or revenue sharing.
+- legacy/engine/script/excanvas.compiled.js — Apache License 2.0 (Google Inc.)
+- Original myCount.org UI/engine concept — archival reference; separate
+  clearance may be required for the original branding.

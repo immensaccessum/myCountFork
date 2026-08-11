@@ -1,0 +1,25 @@
+{
+  "history": [],
+  "annual": [
+    {
+      "id": "annual:independence-day",
+      "month": 7,
+      "day": 4,
+      "name": { "ru": "День независимости США", "en": "Independence Day" },
+      "desc": {
+        "ru": "4 июля — День независимости США.",
+        "en": "July 4 — United States Independence Day."
+      }
+    },
+    {
+      "id": "annual:thanksgiving",
+      "month": 11,
+      "day": 27,
+      "name": { "ru": "День благодарения (ориентир)", "en": "Thanksgiving (approx.)" },
+      "desc": {
+        "ru": "Четвертый четверг ноября — ориентировочная дата.",
+        "en": "Fourth Thursday of November — approximate anchor date."
+      }
+    }
+  ]
+}

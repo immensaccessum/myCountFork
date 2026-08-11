@@ -8,6 +8,7 @@ import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildOgHtml, requestOrigin } from './og-html.mjs';
+import { renderOgCard } from './og-image.mjs';
 
 const DEFAULT_PATH = join(dirname(fileURLToPath(import.meta.url)), '.data', 'short-links.json');
 
@@ -122,6 +123,34 @@ export async function handleShortRoutes(req, res, store = defaultStore) {
     return true;
   }
 
+  const cardMatch = path.match(/^\/s\/([A-Za-z0-9]{4,16})\/card\.png$/);
+  if (cardMatch && (req.method === 'GET' || req.method === 'HEAD')) {
+    const link = store.get(cardMatch[1]);
+    if (!link) {
+      res.statusCode = 404;
+      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+      res.end('Not found');
+      return true;
+    }
+    let png = null;
+    try {
+      png = await renderOgCard(link.title, link.desc);
+    } catch {
+      png = null;
+    }
+    if (!png) {
+      res.statusCode = 302;
+      res.setHeader('Location', '/og-card.png');
+      res.end();
+      return true;
+    }
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.end(png);
+    return true;
+  }
+
   const m = path.match(/^\/s\/([A-Za-z0-9]{4,16})$/);
   if (m && (req.method === 'GET' || req.method === 'HEAD')) {
     const link = store.get(m[1]);
@@ -137,7 +166,7 @@ export async function handleShortRoutes(req, res, store = defaultStore) {
       description: link.desc,
       pageUrl: `${origin}/s/${m[1]}`,
       redirectUrl: `${origin}${link.to}`,
-      imageUrl: `${origin}/og-card.png`,
+      imageUrl: `${origin}/s/${m[1]}/card.png`,
       imageWidth: 1200,
       imageHeight: 630,
       siteName: 'myCount',

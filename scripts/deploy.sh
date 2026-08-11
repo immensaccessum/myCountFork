@@ -15,13 +15,14 @@ rsync -avz --delete --exclude 'server' \
   "$ROOT/dist/" "$SERVER:$REMOTE_DIR/"
 
 echo "→ Sync API/OG server…"
-rsync -avz --exclude '.data' \
+rsync -avz --exclude '.data' --exclude 'node_modules' \
   -e "ssh -p $PORT" \
   "$ROOT/server/" "$SERVER:$REMOTE_DIR/server/"
 
 echo "→ Configure systemd + nginx on server…"
 ssh -p "$PORT" "$SERVER" bash -s <<REMOTE
 set -euo pipefail
+cd "$REMOTE_DIR/server" && npm install --omit=dev --no-audit --no-fund --loglevel=error
 install -m 644 "$REMOTE_DIR/server/mycount-fork.service" /etc/systemd/system/mycount-fork.service
 systemctl daemon-reload
 systemctl enable mycount-fork

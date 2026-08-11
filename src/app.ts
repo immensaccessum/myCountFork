@@ -112,13 +112,12 @@ export class App {
 
   private initFromUrl(): void {
     const preset = window.__MC_PRESET;
+    const url = parseUrlState(location.search);
+    this.wm = (preset?.wm as ViewMode) || url.wm;
     if (preset?.h1) {
       this.landingH1 = preset.h1;
       this.landingIntro = preset.intro || '';
-      this.applyLandingIntro();
     }
-    const url = parseUrlState(location.search);
-    this.wm = (preset?.wm as ViewMode) || url.wm;
     if (url.wid) this.eventWid = url.wid;
     if (url.t1) {
       this.text1 = url.t1;
@@ -160,6 +159,7 @@ export class App {
     } else {
       const eventId = url.eid || preset?.eventId;
       if (eventId) {
+        this.applyViewMode();
         void this.applyLandingEvent(eventId).then(() => {
           if (url.lt && url.local) {
             this.syncFormFromLocalSpec(url.local);

@@ -320,7 +320,9 @@ export class App {
       this.shareMode = 'instant';
       this.localDateActive = false;
       this.localSpec = null;
-      this.currentEventEid = ev.id;
+      // Предустановка — только префилл формы, не «счётчик события»: дата ниже
+      // интерпретируется в поясе посетителя и уже не совпадает с датой события.
+      this.currentEventEid = '';
       this.eventOffset = 0;
       // Предустановка — календарная дата: берём стеночное время события (полночь МСК
       // для «начала сентября» и т.п.) и интерпретируем его в поясе посетителя.
@@ -616,6 +618,9 @@ export class App {
 
   private bornFromForm(): void {
     this.eventOffset = 0;
+    // Ручное изменение даты отвязывает счётчик от события каталога/лендинга:
+    // иначе eid в ссылке перезапишет пользовательскую дату у получателя.
+    this.currentEventEid = '';
     this.clampDayField();
     if (this.shareMode === 'local' || this.localDateActive) {
       const spec = this.readFormLocalSpec();

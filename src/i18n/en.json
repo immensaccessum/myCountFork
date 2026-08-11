@@ -75,7 +75,7 @@
   "themeCosmo": "Space",
   "themePhysics": "Physics",
   "themeLit": "Classic",
-  "progressLabel": "{pct}% of the way to the event",
+  "progressLabel": "{pct}% elapsed since Jan 1 toward the event",
   "footer": "myCount Fork v0.4",
   "adLabel": "Ad"
 }

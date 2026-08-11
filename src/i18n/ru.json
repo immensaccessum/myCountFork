@@ -75,7 +75,7 @@
   "themeCosmo": "Космос",
   "themePhysics": "Физика",
   "themeLit": "Классика",
-  "progressLabel": "Прошло {pct}% пути до события",
+  "progressLabel": "С 1 января прошло {pct}% до события",
   "footer": "myCount Fork v0.4",
   "adLabel": "Реклама"
 }

@@ -42,6 +42,23 @@ export function defaultEventIndex(events: CounterEvent[]): number {
   return best + 1;
 }
 
+/** Nearest upcoming event; falls back to closest-by-time if all are in the past. */
+export function defaultUpcomingEventIndex(events: CounterEvent[], now = Date.now()): number {
+  if (!events.length) return 1;
+  let best = -1;
+  let bestDist = Infinity;
+  events.forEach((e, i) => {
+    if (e.t <= now) return;
+    const d = e.t - now;
+    if (d < bestDist) {
+      bestDist = d;
+      best = i;
+    }
+  });
+  if (best >= 0) return best + 1;
+  return defaultEventIndex(events);
+}
+
 export function isEventFuture(t: number, now = Date.now()): boolean {
   return t > now;
 }

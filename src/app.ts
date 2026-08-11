@@ -7,7 +7,8 @@ import {
   findEventById,
   findEventIndex,
   eventAtIndex,
-  defaultEventIndex,
+  defaultUpcomingEventIndex,
+  getStoredCountry,
 } from './lib/events';
 
 const EVENT_COUNTRY = 'RU';
@@ -176,6 +177,12 @@ export class App {
         this.applyViewMode();
         this.syncShareModeUI();
         this.refreshUI();
+      } else if (this.shouldBootstrapDefaultDate(url, preset?.eventId)) {
+        this.applyViewMode();
+        void this.bootstrapDefaultDate().then(() => {
+          this.syncShareModeUI();
+          this.refreshUI();
+        });
       } else {
         this.syncTzFormFromHelper();
         this.syncFormFromBorn(born);
@@ -272,8 +279,13 @@ export class App {
   }
 
   private async applyLandingEvent(eventId: string): Promise<void> {
-    const ev = await fetchLandingEvent(eventId, this.lang);
+    let ev = await fetchLandingEvent(eventId, this.lang);
+    if (!ev) {
+      const slug = location.pathname.match(/\/(?:do|until)\/([^/]+)\/?$/)?.[1];
+      if (slug) ev = await fetchLandingEvent(slug, this.lang);
+    }
     if (!ev) return;
+    this.eventOffset = 0;
     this.currentEventEid = ev.id;
     this.text1 = '';
     this.topTextEdited = false;
@@ -283,6 +295,7 @@ export class App {
       this.applyLandingIntro();
     }
     this.helper.setBornTime(ev.t, ev.tz, 1, 0, 0, this.tx);
+    this.syncFormFromBorn(ev.t);
     const custom1 = this.root.querySelector<HTMLInputElement>('#inp-text1');
     if (custom1 && !custom1.value.trim()) {
       custom1.placeholder = `${ev.name[this.lang]} — ${this.helper.buildDateText(this.tx)}`;
@@ -312,12 +325,44 @@ export class App {
     el.innerHTML = `<h2>${this.tx.popularCounters}</h2><nav class="popular-nav">${links}</nav>`;
   }
 
+  private shouldBootstrapDefaultDate(
+    url: ReturnType<typeof parseUrlState>,
+    presetEventId?: string,
+  ): boolean {
+    return this.wm === 3 && !url.t && !url.lt && !url.eid && !presetEventId;
+  }
+
+  private async bootstrapDefaultDate(): Promise<void> {
+    try {
+      const cc = getStoredCountry(this.lang);
+      this.eventCatalog = await loadEventCatalog(cc);
+      const wid = defaultUpcomingEventIndex(this.eventCatalog);
+      this.eventWid = wid;
+      const ev = eventAtIndex(this.eventCatalog, wid);
+      this.text1 = '';
+      this.text2 = '';
+      this.topTextEdited = false;
+      this.shareMode = 'instant';
+      this.localDateActive = false;
+      this.localSpec = null;
+      this.currentEventEid = ev.id;
+      this.eventOffset = 0;
+      this.helper.setBornTime(ev.t, ev.tz, 1, 0, 0, this.tx);
+      this.syncTzFormFromHelper();
+      this.syncFormFromBorn(ev.t);
+    } catch {
+      this.eventCatalog = [];
+    }
+  }
+
   private async bootstrapEvents(url: ReturnType<typeof parseUrlState>): Promise<void> {
     this.setEventsLoading(true);
 
     try {
       this.eventCatalog = await loadEventCatalog(EVENT_COUNTRY);
-      const wid = url.eid ? findEventIndex(this.eventCatalog, url.eid) : defaultEventIndex(this.eventCatalog);
+      const wid = url.eid
+        ? findEventIndex(this.eventCatalog, url.eid)
+        : defaultUpcomingEventIndex(this.eventCatalog);
       this.eventWid = wid;
       this.applyEventByWid(wid);
     } catch {
@@ -341,6 +386,7 @@ export class App {
   }
 
   private applyCounterEvent(ev: CounterEvent, wid: number): void {
+    this.eventOffset = 0;
     this.eventWid = wid;
     this.currentEventEid = ev.id;
     this.text2 = '';
@@ -349,7 +395,10 @@ export class App {
     this.localSpec = null;
     this.helper.setBornTime(ev.t, ev.tz, 1, 0, 0, this.tx);
     this.syncFormFromBorn(ev.t);
+    this.renderEventsPanel(ev, wid);
+  }
 
+  private renderEventsPanel(ev: CounterEvent, wid: number): void {
     const titleEl = this.root.querySelector('#event-title');
     if (titleEl) titleEl.textContent = ev.name[this.lang];
 
@@ -386,6 +435,13 @@ export class App {
 
     const indexEl = this.root.querySelector('#event-index');
     if (indexEl) indexEl.textContent = `${wid} / ${this.eventCatalog.length}`;
+  }
+
+  private syncEventsPanelFromCatalog(): void {
+    if (!this.eventCatalog.length) return;
+    const ev = eventAtIndex(this.eventCatalog, this.eventWid);
+    this.currentEventEid = ev.id;
+    this.renderEventsPanel(ev, this.eventWid);
   }
 
   private syncFormFromBorn(t: number): void {
@@ -595,6 +651,7 @@ export class App {
   }
 
   private bornFromForm(): void {
+    this.eventOffset = 0;
     if (this.shareMode === 'local' || this.localDateActive) {
       const spec = this.readFormLocalSpec();
       this.localSpec = spec;
@@ -753,13 +810,12 @@ export class App {
     if (this.wm === 1) {
       if (t1El) t1El.textContent = this.helper.buildDateText(this.tx);
       if (t2El) t2El.textContent = this.text2;
-      const modeEl = this.root.querySelector('#event-mode');
-      if (modeEl) {
-        modeEl.textContent = this.helper.cm < 0 ? this.tx.eventModeUntil : this.tx.eventModeSince;
-      }
+      this.syncEventsPanelFromCatalog();
     } else if (this.wm === 4) {
-      if (t1El) t1El.textContent = this.text1 || dateText;
-      if (t2El) t2El.textContent = this.text2;
+      const custom1 = this.text1.trim();
+      const custom2 = this.text2.trim();
+      if (t1El) t1El.textContent = custom1 || dateText;
+      if (t2El) t2El.textContent = custom1 ? custom2 || dateText : custom2;
     } else {
       if (t1El) t1El.textContent = custom1?.value.trim() || dateText;
       if (t2El) t2El.textContent = custom2?.value || '';
@@ -800,6 +856,50 @@ export class App {
     label.textContent = this.tx.progressLabel.replace('{pct}', String(pct));
   }
 
+  private readLifeFindValue(): number {
+    const raw = this.root.querySelector<HTMLInputElement>('#life-find')?.value.trim() || '';
+    if (!raw) return 0;
+    const n = parseFloat(raw.replace(/\s/g, '').replace(',', '.'));
+    return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
+  }
+
+  private updateLifeFindIcon(): void {
+    const input = this.root.querySelector<HTMLInputElement>('#life-find');
+    const icon = this.root.querySelector<HTMLImageElement>('#life-find-icon');
+    if (!input || !icon) return;
+    const raw = input.value.trim();
+    if (!raw) {
+      icon.src = '/cimg/001/i/find.png';
+      input.classList.remove('life-find-input--error');
+      return;
+    }
+    const n = this.readLifeFindValue();
+    if (n > 0) {
+      icon.src = '/cimg/001/i/find_ok.png';
+      input.classList.remove('life-find-input--error');
+    } else {
+      icon.src = '/cimg/001/i/find_er.png';
+      input.classList.add('life-find-input--error');
+    }
+  }
+
+  private changeLifeOffset(offset: number): void {
+    this.eventOffset = offset;
+    this.renderLifeTable();
+  }
+
+  private renderLifeNav(eventCount: number): void {
+    const nav = this.root.querySelector('.life-nav');
+    if (!nav) return;
+    const findVal = this.readLifeFindValue();
+    (nav as HTMLElement).hidden = findVal > 0;
+    if (findVal > 0) return;
+    const prev = nav.querySelector<HTMLButtonElement>('#life-prev');
+    const next = nav.querySelector<HTMLButtonElement>('#life-next');
+    if (prev) prev.disabled = eventCount === 0 && this.eventOffset <= 0;
+    if (next) next.disabled = eventCount === 0 && this.eventOffset >= 0;
+  }
+
   private renderMetrics(): void {
     const ul = this.root.querySelector('#metrics');
     if (!ul) return;
@@ -818,14 +918,13 @@ export class App {
       li.appendChild(a);
       ul.appendChild(li);
     }
-    const cur = this.root.querySelector('#current-metric');
-    if (cur) cur.textContent = this.helper.getMainMetric(null, this.tx);
   }
 
   private renderLifeTable(): void {
-    const tbody = this.root.querySelector('#life-table tbody');
+    const tbody = this.root.querySelector('#life-table-body');
     if (!tbody) return;
-    const raw = this.helper.getEventArray(this.eventOffset, 0);
+    const findVal = this.readLifeFindValue();
+    const raw = this.helper.getEventArray(this.eventOffset, findVal);
     raw.pop();
     const events = raw.filter((e): e is { ev: number; em: string; es: number; efid: number } => typeof e !== 'number');
     events.sort((a: { es: number }, b: { es: number }) => a.es - b.es);
@@ -834,6 +933,7 @@ export class App {
       const tr = document.createElement('tr');
       const ev = events[i];
       if (ev) {
+        if (ev.efid === this.helper.format) tr.classList.add('life-table-row--active');
         const bs = this.helper.getDateStrEx(ev.es, true, -new Date().getTimezoneOffset() * 60, 0, this.tx);
         tr.innerHTML = `<td>${bs.dm}${this.tx.dateDel}${bs.knywy}</td><td>${bs.fts}<span class="rs">${bs.rs}</span></td><td><strong>${numToStr(ev.ev)}</strong> <a href="#" data-fid="${ev.efid}">${ev.em}</a></td>`;
         tr.querySelector('a')?.addEventListener('click', (e) => {
@@ -846,6 +946,8 @@ export class App {
       }
       tbody.appendChild(tr);
     }
+    this.renderLifeNav(events.length);
+    this.updateLifeFindIcon();
   }
 
   private drawBg(): void {
@@ -917,14 +1019,14 @@ export class App {
       e.preventDefault();
       this.wm = 1;
       this.applyViewMode();
-      if (!this.eventCatalog.length) void this.bootstrapEvents(parseUrlState(''));
+      if (!this.eventCatalog.length) void this.bootstrapEvents(parseUrlState(location.search));
       else this.refreshUI();
     });
     this.root.querySelector('#nav-new')?.addEventListener('click', (e) => {
       e.preventDefault();
       this.wm = 3;
       this.applyViewMode();
-      this.refreshUI();
+      void this.bootstrapDefaultDate().then(() => this.refreshUI());
     });
     this.root.querySelector('#event-prev')?.addEventListener('click', (e) => {
       e.preventDefault();
@@ -1049,14 +1151,18 @@ export class App {
     });
     this.root.querySelector('#life-prev')?.addEventListener('click', (e) => {
       e.preventDefault();
-      this.eventOffset--;
-      this.renderLifeTable();
+      this.changeLifeOffset(this.eventOffset - 1);
+    });
+    this.root.querySelector('#life-zero')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      this.changeLifeOffset(0);
     });
     this.root.querySelector('#life-next')?.addEventListener('click', (e) => {
       e.preventDefault();
-      this.eventOffset++;
-      this.renderLifeTable();
+      this.changeLifeOffset(this.eventOffset + 1);
     });
+    this.root.querySelector('#life-find')?.addEventListener('input', () => this.renderLifeTable());
+    this.root.querySelector('#life-find')?.addEventListener('change', () => this.renderLifeTable());
   }
 
   private render(): void {
@@ -1175,11 +1281,24 @@ export class App {
         </section>
 
         <section class="section-life card">
-          <p id="current-metric" class="current-metric"></p>
-          <table id="life-table" class="life-table"><thead><tr><th>${this.tx.dateHeader}</th><th></th><th>${this.tx.search}</th></tr></thead><tbody></tbody></table>
+          <table id="life-table" class="life-table">
+            <thead>
+              <tr>
+                <th colspan="2">${this.tx.dateHeader}</th>
+                <th class="life-th-search">
+                  <label class="life-search">
+                    <img src="/cimg/001/i/find.png" alt="" width="18" height="18" id="life-find-icon" class="life-find-icon">
+                    <input type="text" id="life-find" class="life-find-input" inputmode="numeric" autocomplete="off" aria-label="${this.tx.search}">
+                  </label>
+                </th>
+              </tr>
+            </thead>
+            <tbody id="life-table-body"></tbody>
+          </table>
           <div class="life-nav">
-            <button type="button" id="life-prev">‹</button>
-            <button type="button" id="life-next">›</button>
+            <button type="button" id="life-prev">&lt;</button>
+            <button type="button" id="life-zero">0</button>
+            <button type="button" id="life-next">&gt;</button>
           </div>
         </section>
 

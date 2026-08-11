@@ -263,12 +263,56 @@ html, body {
   text-align: left;
 }
 
+.life-table tr.life-table-row--active td {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.life-th-search {
+  width: 40%;
+  text-align: right;
+  vertical-align: middle;
+}
+
+.life-search {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  width: min(100%, 18rem);
+  margin-left: auto;
+}
+
+.life-find-icon {
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+
+.life-find-input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.life-find-input:focus {
+  outline: 2px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  border-color: var(--accent);
+}
+
+.life-find-input--error {
+  border-color: #e03030;
+}
+
 .life-nav, .event-date-row {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
   max-width: 100%;
+  margin-top: 1rem;
 }
 
 .events-heading {
@@ -464,13 +508,18 @@ html, body {
 }
 
 .life-nav button {
-  font-size: 1.5rem;
+  font-size: 1.1rem;
   padding: 0.25rem 0.75rem;
   border: 1px solid var(--border);
   border-radius: 6px;
   background: var(--card);
   color: var(--text);
   cursor: pointer;
+}
+
+.life-nav button:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
 .link-row {

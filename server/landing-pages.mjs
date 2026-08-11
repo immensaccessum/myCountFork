@@ -51,11 +51,20 @@ function seasonDesc(lang, gen) {
   return `How many days are left until the start of ${gen}. Precise countdown in days, hours and minutes.`;
 }
 
+function catalogDescRu(gen, dateLabel) {
+  return `Счётчик до ${dateLabel || gen}.`;
+}
+
+function catalogDescEn(gen, dateLabel) {
+  return `Countdown to ${dateLabel || gen}.`;
+}
+
 /** @returns {import('./events-catalog.mjs').LandingEventDef[]} */
 export function getLandingPageDefs() {
   const pages = [];
 
   for (const m of DATA.months) {
+    const dateLabel = `1 ${m.genRu}`;
     pages.push({
       id: m.id,
       slugRu: m.slugRu,
@@ -69,9 +78,10 @@ export function getLandingPageDefs() {
       descEn: monthDesc('en', m.genEn),
       h1Ru: `Сколько дней до ${m.genRu}?`,
       h1En: `How many days until ${m.genEn}?`,
-      name: { ru: `1 ${m.nameRu}`, en: `1 ${m.nameEn}` },
+      name: { ru: m.nameRu, en: m.nameEn },
       bodyRu: monthDesc('ru', m.genRu),
       bodyEn: monthDesc('en', m.genEn),
+      catalogDesc: { ru: catalogDescRu(m.genRu, dateLabel), en: catalogDescEn(m.genEn, `1 ${m.nameEn}`) },
     });
   }
 
@@ -89,9 +99,10 @@ export function getLandingPageDefs() {
       descEn: seasonDesc('en', s.genEn),
       h1Ru: `Сколько дней до ${s.genRu}?`,
       h1En: `How many days until ${s.genEn}?`,
-      name: { ru: `Начало ${s.genRu}`, en: `Start of ${s.genEn}` },
+      name: { ru: s.nameRu, en: s.nameEn },
       bodyRu: seasonDesc('ru', s.genRu),
       bodyEn: seasonDesc('en', s.genEn),
+      catalogDesc: { ru: `Счётчик до начала ${s.genRu}.`, en: `Countdown to the start of ${s.genEn}.` },
     });
   }
 
@@ -113,6 +124,7 @@ export function getLandingPageDefs() {
       name: { ru: sp.nameRu, en: sp.nameEn },
       bodyRu: sp.descRu,
       bodyEn: sp.descEn,
+      catalogDesc: { ru: sp.descRu.split('.')[0] + '.', en: sp.descEn.split('.')[0] + '.' },
     });
   }
 
@@ -131,7 +143,7 @@ export function landingEventFromDef(def) {
     source: 'landing',
     slug: { ru: def.slugRu, en: def.slugEn },
     name: def.name,
-    desc: { ru: def.bodyRu, en: def.bodyEn },
+    desc: def.catalogDesc || { ru: def.bodyRu, en: def.bodyEn },
   };
 }
 

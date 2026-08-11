@@ -50,10 +50,11 @@ export async function handleApiRequest(req, res, next) {
     return;
   }
 
-  const lm = path.match(/^\/api\/landing\/([A-Za-z0-9-]+)$/);
+  const lm = path.match(/^\/api\/landing\/([^/?#]+)$/);
   if (lm) {
     const lang = (url.split('?')[1] && new URLSearchParams(url.split('?')[1]).get('lang')) || 'ru';
-    const def = findLandingBySlug(lm[1], lang) || findLandingById(lm[1]);
+    const key = decodeURIComponent(lm[1]);
+    const def = findLandingBySlug(key, lang) || findLandingById(key);
     if (!def) {
       sendJson(res, 404, { error: 'not found' });
       return;

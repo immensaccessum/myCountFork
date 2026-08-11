@@ -77,11 +77,7 @@
   "savedOk": "Сохранено!",
   "searchPlaceholder": "например, 1000000",
   "counterClickHint": "Клик — следующая единица времени",
-  "counterTheme": "Фон счётчика:",
-  "themeDefault": "Стандартный",
-  "themeCosmo": "Космос",
-  "themePhysics": "Физика",
-  "themeLit": "Классика",
+  "restClickHint": "Клик — переключить вид остатка: десятичная дробь или единицы времени",
   "progressLabel": "С 1 января прошло {pct}% до события",
   "footer": "myCount v0.4",
   "adLabel": "Реклама"

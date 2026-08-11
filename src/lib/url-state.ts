@@ -17,8 +17,6 @@ export interface UrlState {
   /** New: local wall-clock target (lt=1). Old links without lt use t+tz only. */
   lt?: boolean;
   local?: LocalDateSpec;
-  /** Counter background theme */
-  th?: string;
 }
 
 export interface ShareParams {
@@ -34,7 +32,6 @@ export interface ShareParams {
   omitTz?: boolean;
   shareMode?: ShareMode;
   local?: LocalDateSpec;
-  theme?: string;
 }
 
 function parseLocalSpec(params: URLSearchParams): LocalDateSpec | undefined {
@@ -99,8 +96,6 @@ export function parseUrlState(search: string): UrlState {
     state.lt = true;
     state.local = local;
   }
-  const th = params.get('th');
-  if (th) state.th = th;
   return state;
 }
 
@@ -131,7 +126,6 @@ export function buildAppShareUrl(params: ShareParams): string {
   if (params.text2) q.set('t2', Base64.encode(params.text2.slice(0, MAX_SHARE_TEXT)));
   if (params.eid) q.set('eid', params.eid);
   if (params.cc) q.set('cc', params.cc);
-  if (params.theme && params.theme !== 'default') q.set('th', params.theme);
 
   return `${origin}${params.basePath}?${q.toString()}`;
 }

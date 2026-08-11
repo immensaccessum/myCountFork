@@ -174,6 +174,12 @@ html, body {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.sub-text:hover {
+  border-left-color: var(--accent);
 }
 
 .sub-text strong {
@@ -755,11 +761,6 @@ body[data-mode='4'] .counter-wrap {
 
 .popular-link:hover {
   text-decoration: underline;
-}
-
-.counter-wrap--themed {
-  border-radius: 8px;
-  padding: 1rem;
 }
 
 .progress-bar {

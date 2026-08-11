@@ -33,7 +33,6 @@ import {
 } from './lib/tz';
 import { getLocale } from './i18n';
 import { fetchLandingEvent, fetchPopularLandings } from './lib/landing-pages';
-import { type CounterTheme, parseTheme, THEME_BACKGROUNDS, themeToParam } from './lib/counter-theme';
 import { buildIcsFile, downloadIcs, icsFilename, isAnnualFromSpec } from './lib/ics';
 import { deleteSavedCounter, loadSavedCounters, saveCounter, type SavedCounter } from './lib/saved-counters';
 import { eventProgressPct } from './lib/progress';
@@ -62,7 +61,6 @@ export class App {
   private lastCm = 0;
   private topTextEdited = false;
   private popularLandings: { slug: string; label: string; href: string }[] = [];
-  private counterTheme: CounterTheme = 'default';
   private savedCounters: SavedCounter[] = loadSavedCounters();
   private landingH1 = '';
   private landingIntro = '';
@@ -149,8 +147,6 @@ export class App {
       spac: 50,
     });
     this.applyCounterTheme();
-    this.counterTheme = parseTheme(url.th);
-    this.applyCounterBackground();
 
     if (this.wm === 1) {
       this.applyViewMode();
@@ -191,28 +187,6 @@ export class App {
     }
     void this.loadPopularLandings();
     this.renderSavedCounters();
-  }
-
-  private applyCounterBackground(): void {
-    const wrap = this.root.querySelector<HTMLElement>('.counter-wrap');
-    if (!wrap) return;
-    const bg = THEME_BACKGROUNDS[this.counterTheme];
-    if (bg) {
-      wrap.style.backgroundImage = `url(${bg})`;
-      wrap.style.backgroundSize = 'cover';
-      wrap.style.backgroundPosition = 'center';
-      wrap.classList.add('counter-wrap--themed');
-    } else {
-      wrap.style.backgroundImage = '';
-      wrap.classList.remove('counter-wrap--themed');
-    }
-  }
-
-  private setCounterTheme(theme: CounterTheme): void {
-    this.counterTheme = theme;
-    this.applyCounterBackground();
-    const link = this.root.querySelector<HTMLInputElement>('#share-link');
-    if (link) link.value = this.shareUrl();
   }
 
   private renderSavedCounters(): void {
@@ -292,6 +266,7 @@ export class App {
       this.landingIntro = ev.desc[this.lang];
       this.applyLandingIntro();
     }
+    this.helper.ent = 4;
     this.helper.setBornTime(ev.t, ev.tz, 1, 0, 0, this.tx);
     this.syncTzFormFromHelper();
     this.syncFormFromBorn(ev.t);
@@ -350,6 +325,7 @@ export class App {
       // для «начала сентября» и т.п.) и интерпретируем его в поясе посетителя.
       const localSec = browserTzOffsetMin() * 60;
       const t = ev.t + (ev.tz - localSec) * 1000;
+      this.helper.ent = 4;
       this.helper.setBornTime(t, localSec, 1, 0, 0, this.tx);
       this.syncTzFormFromHelper();
       this.syncFormFromBorn(t);
@@ -396,6 +372,7 @@ export class App {
     this.shareMode = 'instant';
     this.localDateActive = false;
     this.localSpec = null;
+    this.helper.ent = 4;
     this.helper.setBornTime(ev.t, ev.tz, 1, 0, 0, this.tx);
     this.syncTzFormFromHelper();
     this.syncFormFromBorn(ev.t);
@@ -740,7 +717,6 @@ export class App {
       omitTz: this.isBrowserTimezone(),
       shareMode,
       local: shareMode === 'local' ? this.readFormLocalSpec() : undefined,
-      theme: themeToParam(this.counterTheme),
     });
   }
 
@@ -834,12 +810,17 @@ export class App {
     this.updateShareLocalLabel();
     this.refreshSharePreview();
     this.updateProgressBar();
-    this.updateRestToggleLabel();
+    this.syncAddressBar();
   }
 
-  private updateRestToggleLabel(): void {
-    const btn = this.root.querySelector('#rest-toggle');
-    if (btn) btn.textContent = this.helper.restMode === 0 ? this.tx.restDecimal : this.tx.restUnits;
+  /** Адресная строка всегда отражает текущее состояние счётчика (метрику, дату, тексты). */
+  private syncAddressBar(): void {
+    if (location.pathname !== langBasePath(this.lang)) return;
+    const q = this.appShareUrl(this.wm).split('?')[1] || '';
+    const next = location.pathname + (q ? '?' + q : '');
+    if (location.pathname + location.search !== next) {
+      history.replaceState(null, '', next);
+    }
   }
 
   private updateProgressBar(): void {
@@ -1087,12 +1068,6 @@ export class App {
     this.root.querySelector<HTMLInputElement>('#share-link')?.addEventListener('focus', (e) => {
       (e.target as HTMLInputElement).select();
     });
-    this.root.querySelector('#theme-select')?.addEventListener('change', (e) => {
-      const v = (e.target as HTMLSelectElement).value as CounterTheme;
-      this.setCounterTheme(v);
-    });
-    const themeSel = this.root.querySelector<HTMLSelectElement>('#theme-select');
-    if (themeSel) themeSel.value = this.counterTheme;
     this.root.querySelector('#toggle-settings')?.addEventListener('click', (e) => {
       e.preventDefault();
       this.settingsOpen = !this.settingsOpen;
@@ -1160,8 +1135,7 @@ export class App {
       });
     }
     this.updateTextLimitHint();
-    this.root.querySelector('#rest-toggle')?.addEventListener('click', (e) => {
-      e.preventDefault();
+    this.root.querySelector('#sub-text')?.addEventListener('click', () => {
       this.helper.restMode = (this.helper.restMode + 1) % 2;
       this.refreshUI();
     });
@@ -1274,7 +1248,7 @@ export class App {
               <div class="counter-canvas-wrap">
                 <canvas id="counter-canvas" width="800" height="85" title="${this.tx.counterClickHint}"></canvas>
               </div>
-              <div id="sub-text" class="sub-text"></div>
+              <div id="sub-text" class="sub-text" title="${this.tx.restClickHint}"></div>
             </div>
           </div>
           <div id="progress-bar" class="progress-bar" hidden>
@@ -1311,9 +1285,6 @@ export class App {
           <button type="button" id="toggle-settings" class="btn-link">${this.tx.adjustAndGetLink}</button>
           <div class="settings-pad" hidden>
             <h2>${this.tx.settingsHeader}</h2>
-            <p>${this.tx.restMode}
-              <button type="button" id="rest-toggle" class="btn-ghost">${this.tx.restDecimal}</button>
-            </p>
             <label class="settings-field">${this.tx.topText}<input type="text" id="inp-text1" class="wide" maxlength="${MAX_SHARE_TEXT}"></label>
             <label class="settings-field">${this.tx.bottomText}<input type="text" id="inp-text2" class="wide" maxlength="${MAX_SHARE_TEXT}"></label>
             <p class="hint text-limit-hint" id="text-limit-hint">${this.tx.textLimitHint.replace('{n}', String(MAX_SHARE_TEXT))}</p>
@@ -1339,14 +1310,6 @@ export class App {
               </div>
             </fieldset>
             <p id="share-preview" class="share-preview" hidden></p>
-            <label class="settings-field">${this.tx.counterTheme}
-              <select id="theme-select" class="wide">
-                <option value="default">${this.tx.themeDefault}</option>
-                <option value="cosmo">${this.tx.themeCosmo}</option>
-                <option value="fisic">${this.tx.themePhysics}</option>
-                <option value="lit">${this.tx.themeLit}</option>
-              </select>
-            </label>
             <div class="link-row">
               <input type="text" id="share-link" class="wide" readonly>
               <button type="button" id="copy-link">${this.tx.copyLink}</button>

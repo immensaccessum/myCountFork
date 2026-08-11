@@ -43,9 +43,6 @@ describe('parseUrlState', () => {
     expect(state.eid).toBe('landing:month:8');
   });
 
-  it('parses th theme param', () => {
-    expect(parseUrlState('?th=cosmo').th).toBe('cosmo');
-  });
 });
 
 describe('buildShareUrl', () => {

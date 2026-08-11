@@ -102,10 +102,6 @@ export interface LocaleStrings {
   savedOk: string;
   searchPlaceholder: string;
   counterClickHint: string;
-  counterTheme: string;
-  themeDefault: string;
-  themeCosmo: string;
-  themePhysics: string;
-  themeLit: string;
+  restClickHint: string;
   progressLabel: string;
 }

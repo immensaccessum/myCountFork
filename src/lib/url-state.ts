@@ -17,6 +17,8 @@ export interface UrlState {
   /** New: local wall-clock target (lt=1). Old links without lt use t+tz only. */
   lt?: boolean;
   local?: LocalDateSpec;
+  /** Counter background theme */
+  th?: string;
 }
 
 export interface ShareParams {
@@ -32,6 +34,7 @@ export interface ShareParams {
   omitTz?: boolean;
   shareMode?: ShareMode;
   local?: LocalDateSpec;
+  theme?: string;
 }
 
 function parseLocalSpec(params: URLSearchParams): LocalDateSpec | undefined {
@@ -83,7 +86,7 @@ export function parseUrlState(search: string): UrlState {
   if (fid) state.fid = parseInt(fid, 10);
   const wid = params.get('wid');
   if (wid) state.wid = parseInt(wid, 10);
-  const eid = params.get('eid');
+  const eid = params.get('eid') || params.get('event');
   if (eid) state.eid = eid;
   const cc = params.get('cc');
   if (cc) state.cc = cc.toUpperCase();
@@ -96,6 +99,8 @@ export function parseUrlState(search: string): UrlState {
     state.lt = true;
     state.local = local;
   }
+  const th = params.get('th');
+  if (th) state.th = th;
   return state;
 }
 
@@ -126,6 +131,7 @@ export function buildAppShareUrl(params: ShareParams): string {
   if (params.text2) q.set('t2', Base64.encode(params.text2.slice(0, MAX_SHARE_TEXT)));
   if (params.eid) q.set('eid', params.eid);
   if (params.cc) q.set('cc', params.cc);
+  if (params.theme && params.theme !== 'default') q.set('th', params.theme);
 
   return `${origin}${params.basePath}?${q.toString()}`;
 }
@@ -158,7 +164,8 @@ export function buildShareUrl(
 }
 
 export function detectLang(pathname: string): 'ru' | 'en' {
-  return pathname.startsWith('/en') ? 'en' : 'ru';
+  if (pathname.startsWith('/en') || pathname.startsWith('/until/')) return 'en';
+  return 'ru';
 }
 
 export function langBasePath(lang: 'ru' | 'en'): string {

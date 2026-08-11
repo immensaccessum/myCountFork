@@ -50,16 +50,18 @@ function wrapText(text, maxChars, maxLines) {
   return lines;
 }
 
-function buildSvg(title, subtitle) {
+function buildSvg(title, subtitle, countdown) {
   const titleFont = title.length > 60 ? 52 : 62;
   // DejaVu Sans Bold averages ~0.64em per char; keep 80px margins on both sides.
   const maxChars = Math.floor(1040 / (titleFont * 0.64));
   const titleLines = wrapText(title, maxChars, 3);
   const subLines = subtitle && subtitle !== title ? wrapText(subtitle, 46, 2) : [];
+  const countLines = countdown ? wrapText(countdown, 40, 1) : [];
 
   const lineH = titleFont * 1.25;
   const subH = subLines.length * 46;
-  const blockH = titleLines.length * lineH + (subLines.length ? subH + 28 : 0);
+  const countH = countLines.length * 40;
+  const blockH = titleLines.length * lineH + (subLines.length ? subH + 28 : 0) + (countLines.length ? countH + 16 : 0);
   let y = (H - blockH) / 2 + titleFont * 0.6 + 30;
 
   let text = '';
@@ -72,6 +74,13 @@ function buildSvg(title, subtitle) {
     for (const line of subLines) {
       text += `<text x="80" y="${y.toFixed(0)}" font-family="DejaVu Sans, sans-serif" font-size="36" fill="#a9a9b5">${escXml(line)}</text>`;
       y += 46;
+    }
+  }
+  if (countLines.length) {
+    y += 12;
+    for (const line of countLines) {
+      text += `<text x="80" y="${y.toFixed(0)}" font-family="DejaVu Sans, sans-serif" font-size="34" font-weight="bold" fill="#e8452c">${escXml(line)}</text>`;
+      y += 40;
     }
   }
 
@@ -92,15 +101,15 @@ function buildSvg(title, subtitle) {
 }
 
 /** Returns a PNG buffer or null when sharp is unavailable. */
-export async function renderOgCard(title, subtitle) {
+export async function renderOgCard(title, subtitle, countdown) {
   const sharp = await getSharp();
   if (!sharp) return null;
 
-  const key = JSON.stringify([title, subtitle]);
+  const key = JSON.stringify([title, subtitle, countdown]);
   const hit = cache.get(key);
   if (hit) return hit;
 
-  const svg = buildSvg(title, subtitle);
+  const svg = buildSvg(title, subtitle, countdown);
   const png = await sharp(Buffer.from(svg)).png().toBuffer();
 
   if (cache.size >= CACHE_MAX) {

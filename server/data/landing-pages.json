@@ -1,0 +1,101 @@
+{
+  "months": [
+    { "id": "landing:month:1", "month": 1, "slugRu": "yanvarya", "slugEn": "january", "nameRu": "января", "nameEn": "January", "genRu": "января", "genEn": "January" },
+    { "id": "landing:month:2", "month": 2, "slugRu": "fevralya", "slugEn": "february", "nameRu": "февраля", "nameEn": "February", "genRu": "февраля", "genEn": "February" },
+    { "id": "landing:month:3", "month": 3, "slugRu": "marta", "slugEn": "march", "nameRu": "марта", "nameEn": "March", "genRu": "марта", "genEn": "March" },
+    { "id": "landing:month:4", "month": 4, "slugRu": "aprelya", "slugEn": "april", "nameRu": "апреля", "nameEn": "April", "genRu": "апреля", "genEn": "April" },
+    { "id": "landing:month:5", "month": 5, "slugRu": "maya", "slugEn": "may", "nameRu": "мая", "nameEn": "May", "genRu": "мая", "genEn": "May" },
+    { "id": "landing:month:6", "month": 6, "slugRu": "iyunya", "slugEn": "june", "nameRu": "июня", "nameEn": "June", "genRu": "июня", "genEn": "June" },
+    { "id": "landing:month:7", "month": 7, "slugRu": "iyulya", "slugEn": "july", "nameRu": "июля", "nameEn": "July", "genRu": "июля", "genEn": "July" },
+    { "id": "landing:month:8", "month": 8, "slugRu": "avgusta", "slugEn": "august", "nameRu": "августа", "nameEn": "August", "genRu": "августа", "genEn": "August" },
+    { "id": "landing:month:9", "month": 9, "slugRu": "sentyabrya", "slugEn": "september", "nameRu": "сентября", "nameEn": "September", "genRu": "сентября", "genEn": "September" },
+    { "id": "landing:month:10", "month": 10, "slugRu": "oktyabrya", "slugEn": "october", "nameRu": "октября", "nameEn": "October", "genRu": "октября", "genEn": "October" },
+    { "id": "landing:month:11", "month": 11, "slugRu": "noyabrya", "slugEn": "november", "nameRu": "ноября", "nameEn": "November", "genRu": "ноября", "genEn": "November" },
+    { "id": "landing:month:12", "month": 12, "slugRu": "dekabrya", "slugEn": "december", "nameRu": "декабря", "nameEn": "December", "genRu": "декабря", "genEn": "December" }
+  ],
+  "seasons": [
+    { "id": "landing:season:spring", "month": 3, "day": 1, "slugRu": "vesny", "slugEn": "spring", "nameRu": "весны", "nameEn": "spring", "genRu": "весны", "genEn": "spring" },
+    { "id": "landing:season:summer", "month": 6, "day": 1, "slugRu": "leta", "slugEn": "summer", "nameRu": "лета", "nameEn": "summer", "genRu": "лета", "genEn": "summer" },
+    { "id": "landing:season:autumn", "month": 9, "day": 1, "slugRu": "oseni", "slugEn": "autumn", "nameRu": "осени", "nameEn": "autumn", "genRu": "осени", "genEn": "autumn" },
+    { "id": "landing:season:winter", "month": 12, "day": 1, "slugRu": "zimy", "slugEn": "winter", "nameRu": "зимы", "nameEn": "winter", "genRu": "зимы", "genEn": "winter" }
+  ],
+  "special": [
+    {
+      "id": "landing:new-year",
+      "month": 1,
+      "day": 1,
+      "slugRu": "novogo-goda",
+      "slugEn": "new-year",
+      "nameRu": "Нового года",
+      "nameEn": "New Year",
+      "genRu": "Нового года",
+      "genEn": "New Year",
+      "titleRu": "Сколько дней до Нового года — точный счётчик онлайн",
+      "titleEn": "How many days until New Year — online countdown",
+      "descRu": "Узнайте, сколько дней, часов, минут и секунд осталось до Нового года. Бесплатный онлайн-счётчик с возможностью поделиться ссылкой.",
+      "descEn": "Find out how many days, hours, minutes and seconds are left until New Year. Free online countdown you can share."
+    },
+    {
+      "id": "landing:knowledge-day",
+      "month": 9,
+      "day": 1,
+      "slugRu": "1-sentyabrya",
+      "slugEn": "september-1",
+      "nameRu": "1 сентября",
+      "nameEn": "September 1",
+      "genRu": "1 сентября",
+      "genEn": "September 1",
+      "titleRu": "Сколько дней до 1 сентября — счётчик до Дня знаний",
+      "titleEn": "How many days until September 1 — back to school countdown",
+      "descRu": "Сколько дней осталось до 1 сентября и начала учебного года. Точный обратный отсчёт в днях, часах и минутах.",
+      "descEn": "How many days are left until September 1 and the start of the school year. Precise countdown in days, hours and minutes."
+    },
+    {
+      "id": "landing:end-summer",
+      "month": 8,
+      "day": 31,
+      "slugRu": "kontsa-leta",
+      "slugEn": "end-of-summer",
+      "nameRu": "конца лета",
+      "nameEn": "the end of summer",
+      "genRu": "конца лета",
+      "genEn": "the end of summer",
+      "titleRu": "Сколько дней до конца лета — онлайн-счётчик",
+      "titleEn": "How many days until the end of summer — online countdown",
+      "descRu": "Сколько дней осталось до конца лета. Точный счётчик времени до 31 августа.",
+      "descEn": "How many days are left until the end of summer. Precise countdown to August 31."
+    },
+    {
+      "id": "landing:end-year",
+      "month": 12,
+      "day": 31,
+      "slugRu": "kontsa-goda",
+      "slugEn": "end-of-year",
+      "nameRu": "конца года",
+      "nameEn": "the end of the year",
+      "genRu": "конца года",
+      "genEn": "the end of the year",
+      "titleRu": "Сколько дней до конца года — онлайн-счётчик",
+      "titleEn": "How many days until the end of the year — online countdown",
+      "descRu": "Сколько дней осталось до конца года. Точный счётчик времени до 31 декабря.",
+      "descEn": "How many days are left until the end of the year. Precise countdown to December 31."
+    },
+    {
+      "id": "landing:year-2027",
+      "month": 1,
+      "day": 1,
+      "year": 2027,
+      "annual": false,
+      "slugRu": "2027-goda",
+      "slugEn": "year-2027",
+      "nameRu": "2027 года",
+      "nameEn": "2027",
+      "genRu": "2027 года",
+      "genEn": "2027",
+      "titleRu": "Сколько дней до 2027 года — точный счётчик",
+      "titleEn": "How many days until 2027 — online countdown",
+      "descRu": "Сколько дней осталось до наступления 2027 года. Точный обратный отсчёт.",
+      "descEn": "How many days are left until 2027. Precise countdown timer."
+    }
+  ]
+}

@@ -10,6 +10,7 @@ import { fileURLToPath } from 'node:url';
 import { buildOgHtml, requestOrigin } from './og-html.mjs';
 import { renderOgCard } from './og-image.mjs';
 import { allowRequest, clientIp, sendTooMany } from './rate-limit.mjs';
+import { countdownLineFromCounterPath, detectLangFromPath } from './countdown-line.mjs';
 
 const DEFAULT_PATH = join(dirname(fileURLToPath(import.meta.url)), '.data', 'short-links.json');
 
@@ -144,7 +145,9 @@ export async function handleShortRoutes(req, res, store = defaultStore) {
     }
     let png = null;
     try {
-      png = await renderOgCard(link.title, link.desc);
+      const lang = detectLangFromPath(link.to);
+      const countdown = countdownLineFromCounterPath(link.to, lang);
+      png = await renderOgCard(link.title, link.desc, countdown);
     } catch {
       png = null;
     }
@@ -156,7 +159,7 @@ export async function handleShortRoutes(req, res, store = defaultStore) {
     }
     res.statusCode = 200;
     res.setHeader('Content-Type', 'image/png');
-    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
     res.end(png);
     return true;
   }

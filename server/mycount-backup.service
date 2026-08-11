@@ -1,0 +1,11 @@
+[Unit]
+Description=Backup myCount short links store
+After=network.target
+
+[Service]
+Type=oneshot
+User=www-data
+ExecStart=/bin/bash -c 'mkdir -p /opt/mycount-fork/server/.data/backups && cp /opt/mycount-fork/server/.data/short-links.json /opt/mycount-fork/server/.data/backups/short-links-$(date +%%Y%%m%%d).json 2>/dev/null || true; find /opt/mycount-fork/server/.data/backups -name "short-links-*.json" -mtime +14 -delete'
+
+[Install]
+WantedBy=multi-user.target

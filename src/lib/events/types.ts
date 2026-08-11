@@ -1,4 +1,4 @@
-export type EventSource = 'history' | 'annual' | 'milestone' | 'holiday';
+export type EventSource = 'history' | 'annual' | 'milestone' | 'holiday' | 'landing';
 
 export interface CounterEvent {
   id: string;
@@ -8,6 +8,7 @@ export interface CounterEvent {
   desc: { ru: string; en: string };
   source: EventSource;
   countryCode?: string;
+  slug?: { ru: string; en: string };
 }
 
 export interface NagerCountry {

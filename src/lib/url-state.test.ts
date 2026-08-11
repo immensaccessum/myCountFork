@@ -38,10 +38,13 @@ describe('parseUrlState', () => {
     expect(state.t).toBeUndefined();
   });
 
-  it('parses legacy double-encoded t1', () => {
-    const t1 = Base64.encode('Какая то дата');
-    const state = parseUrlState(`?wm=4&t=1&t1=${encodeURIComponent(encodeURIComponent(t1))}`);
-    expect(state.t1).toBe('Какая то дата');
+  it('parses event alias for eid', () => {
+    const state = parseUrlState('?event=landing:month:8');
+    expect(state.eid).toBe('landing:month:8');
+  });
+
+  it('parses th theme param', () => {
+    expect(parseUrlState('?th=cosmo').th).toBe('cosmo');
   });
 });
 

@@ -35,6 +35,11 @@ import {
   type TzMode,
 } from './lib/tz';
 import { getLocale } from './i18n';
+import { fetchLandingEvent, fetchPopularLandings } from './lib/landing-pages';
+import { type CounterTheme, parseTheme, THEME_BACKGROUNDS, themeToParam } from './lib/counter-theme';
+import { buildIcsFile, downloadIcs, icsFilename, isAnnualFromSpec } from './lib/ics';
+import { deleteSavedCounter, loadSavedCounters, saveCounter, type SavedCounter } from './lib/saved-counters';
+import { eventProgressPct } from './lib/progress';
 
 const DEFAULT_BORN = 1332104400000;
 
@@ -59,6 +64,10 @@ export class App {
   private localDateActive = false;
   private localSpec: LocalDateSpec | null = null;
   private lastCm = 0;
+  private topTextEdited = false;
+  private popularLandings: { slug: string; label: string; href: string }[] = [];
+  private counterTheme: CounterTheme = 'default';
+  private savedCounters: SavedCounter[] = loadSavedCounters();
 
   constructor(root: HTMLElement) {
     this.root = root;
@@ -98,10 +107,14 @@ export class App {
   }
 
   private initFromUrl(): void {
+    const preset = window.__MC_PRESET;
     const url = parseUrlState(location.search);
-    this.wm = url.wm;
+    this.wm = (preset?.wm as ViewMode) || url.wm;
     if (url.wid) this.eventWid = url.wid;
-    if (url.t1) this.text1 = url.t1;
+    if (url.t1) {
+      this.text1 = url.t1;
+      this.topTextEdited = true;
+    }
     if (url.t2) this.text2 = url.t2;
 
     const fid = url.fid ?? 1;
@@ -129,21 +142,151 @@ export class App {
       spac: 50,
     });
     this.applyCounterTheme();
+    this.counterTheme = parseTheme(url.th);
+    this.applyCounterBackground();
 
     if (this.wm === 1) {
       this.applyViewMode();
       void this.bootstrapEvents(url);
     } else {
-      if (url.lt && url.local) {
+      const eventId = url.eid || preset?.eventId;
+      if (eventId) {
+        void this.applyLandingEvent(eventId).then(() => {
+          if (url.lt && url.local) {
+            this.syncFormFromLocalSpec(url.local);
+          } else {
+            this.syncTzFormFromHelper();
+            this.syncFormFromBorn(this.helper.bornTime);
+          }
+          this.applyViewMode();
+          this.syncShareModeUI();
+          this.refreshUI();
+        });
+      } else if (url.lt && url.local) {
         this.syncFormFromLocalSpec(url.local);
+        this.applyViewMode();
+        this.syncShareModeUI();
+        this.refreshUI();
       } else {
         this.syncTzFormFromHelper();
         this.syncFormFromBorn(born);
+        this.applyViewMode();
+        this.syncShareModeUI();
+        this.refreshUI();
       }
-      this.applyViewMode();
-      this.syncShareModeUI();
-      this.refreshUI();
     }
+    void this.loadPopularLandings();
+    this.renderSavedCounters();
+  }
+
+  private applyCounterBackground(): void {
+    const wrap = this.root.querySelector<HTMLElement>('.counter-wrap');
+    if (!wrap) return;
+    const bg = THEME_BACKGROUNDS[this.counterTheme];
+    if (bg) {
+      wrap.style.backgroundImage = `url(${bg})`;
+      wrap.style.backgroundSize = 'cover';
+      wrap.style.backgroundPosition = 'center';
+      wrap.classList.add('counter-wrap--themed');
+    } else {
+      wrap.style.backgroundImage = '';
+      wrap.classList.remove('counter-wrap--themed');
+    }
+  }
+
+  private setCounterTheme(theme: CounterTheme): void {
+    this.counterTheme = theme;
+    this.applyCounterBackground();
+    const link = this.root.querySelector<HTMLInputElement>('#share-link');
+    if (link) link.value = this.shareUrl();
+  }
+
+  private renderSavedCounters(): void {
+    const el = this.root.querySelector('#saved-counters-list');
+    if (!el) return;
+    if (!this.savedCounters.length) {
+      el.innerHTML = `<p class="hint">${this.tx.myCountersEmpty}</p>`;
+      return;
+    }
+    el.innerHTML = this.savedCounters
+      .map(
+        (c) =>
+          `<div class="saved-item"><a href="${c.url}">${c.title}</a> <button type="button" data-del="${c.id}" class="btn-ghost">${this.tx.myCountersDelete}</button></div>`,
+      )
+      .join('');
+    el.querySelectorAll('[data-del]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const id = (btn as HTMLElement).dataset.del!;
+        this.savedCounters = deleteSavedCounter(id);
+        this.renderSavedCounters();
+      });
+    });
+  }
+
+  private saveCurrentCounter(): void {
+    const url = this.shareUrl();
+    const title =
+      (this.root.querySelector<HTMLInputElement>('#inp-text1')?.value || this.text1 || this.suggestedTopText()).trim();
+    this.savedCounters = saveCounter({ url, title });
+    this.renderSavedCounters();
+  }
+
+  private downloadCalendar(): void {
+    const title =
+      (this.root.querySelector<HTMLInputElement>('#inp-text1')?.value || this.text1 || this.suggestedTopText()).trim() ||
+      'myCount';
+    const annual = isAnnualFromSpec(
+      this.localSpec,
+      this.root.querySelector<HTMLInputElement>('#share-annual')?.checked ?? false,
+    );
+    downloadIcs(icsFilename(title), buildIcsFile(title, this.helper.bornTime, annual));
+    this.trackGoal('add_to_calendar');
+  }
+
+  private async showQrCode(): Promise<void> {
+    const url = await this.shortShareUrl();
+    const modal = this.root.querySelector('#qr-modal');
+    const canvas = this.root.querySelector<HTMLCanvasElement>('#qr-canvas');
+    if (!modal || !canvas) return;
+    try {
+      const QRCode = await import('qrcode');
+      await QRCode.toCanvas(canvas, url, { width: 220, margin: 2 });
+      (modal as HTMLElement).hidden = false;
+    } catch {
+      window.prompt(this.tx.qrTitle, url);
+    }
+  }
+
+  private trackGoal(name: string): void {
+    const ym = (window as unknown as { ym?: (id: number, action: string, goal: string) => void }).ym;
+    if (typeof ym === 'function') ym(0, 'reachGoal', name);
+  }
+
+  private async applyLandingEvent(eventId: string): Promise<void> {
+    const ev = await fetchLandingEvent(eventId, this.lang);
+    if (!ev) return;
+    this.currentEventEid = ev.id;
+    this.text1 = '';
+    this.topTextEdited = false;
+    this.helper.setBornTime(ev.t, ev.tz, 1, 0, 0, this.tx);
+    const custom1 = this.root.querySelector<HTMLInputElement>('#inp-text1');
+    if (custom1 && !custom1.value.trim()) {
+      custom1.placeholder = `${ev.name[this.lang]} — ${this.helper.buildDateText(this.tx)}`;
+    }
+  }
+
+  private async loadPopularLandings(): Promise<void> {
+    this.popularLandings = await fetchPopularLandings(this.lang);
+    const el = this.root.querySelector('#popular-counters');
+    if (!el) return;
+    if (!this.popularLandings.length) {
+      (el as HTMLElement).hidden = true;
+      return;
+    }
+    const links = this.popularLandings
+      .map((p) => `<a href="${p.href}" class="popular-link">${p.label}</a>`)
+      .join('');
+    el.innerHTML = `<h2>${this.tx.popularCounters}</h2><nav class="popular-nav">${links}</nav>`;
   }
 
   private async bootstrapEvents(url: ReturnType<typeof parseUrlState>): Promise<void> {
@@ -198,6 +341,7 @@ export class App {
         annual: this.tx.eventSourceAnnual,
         milestone: this.tx.eventSourceMilestone,
         holiday: this.tx.eventSourceHoliday,
+        landing: this.tx.eventSourceLanding,
       };
       sourceEl.textContent = labels[ev.source] || '';
     }
@@ -258,8 +402,23 @@ export class App {
       hour: get('#inp-hour'),
       min: get('#inp-min'),
       sec: get('#inp-sec'),
-      annual: this.root.querySelector<HTMLInputElement>('#share-annual')?.checked ?? true,
+      annual: this.root.querySelector<HTMLInputElement>('#share-annual')?.checked ?? false,
     };
+  }
+
+  private suggestedTopText(): string {
+    if (this.shareMode === 'local') {
+      const spec = this.readFormLocalSpec();
+      const label = formatLocalDateLabel(spec, this.lang, this.tx.months, this.tx.monthRp);
+      return this.tx.shareLocalTemplate.replace('{date}', label);
+    }
+    return this.helper.buildDateText(this.tx);
+  }
+
+  private updateTopTextHint(): void {
+    const custom1 = this.root.querySelector<HTMLInputElement>('#inp-text1');
+    if (!custom1 || this.topTextEdited || custom1.value.trim()) return;
+    custom1.placeholder = this.suggestedTopText();
   }
 
   private syncShareModeUI(): void {
@@ -306,6 +465,7 @@ export class App {
     this.bornFromForm();
     this.updateShareLocalLabel();
     this.refreshSharePreview();
+    this.updateTopTextHint();
   }
 
   private applyLocalBornIfNeeded(): void {
@@ -504,6 +664,7 @@ export class App {
       omitTz: this.isBrowserTimezone(),
       shareMode: this.shareMode,
       local: this.shareMode === 'local' ? this.readFormLocalSpec() : undefined,
+      theme: themeToParam(this.counterTheme),
     });
   }
 
@@ -513,16 +674,7 @@ export class App {
 
   private ogTitleDesc(): { title: string; desc: string } {
     const ev = findEventById(this.eventCatalog, this.currentEventEid);
-
-    // Local mode counts to wall-clock in the recipient's zone: no author UTC offset in text.
-    let dateText: string;
-    if (this.shareMode === 'local') {
-      const spec = this.readFormLocalSpec();
-      const label = formatLocalDateLabel(spec, this.lang, this.tx.months, this.tx.monthRp);
-      dateText = this.tx.shareLocalTemplate.replace('{date}', label);
-    } else {
-      dateText = this.helper.buildDateText(this.tx);
-    }
+    const dateText = this.suggestedTopText();
 
     if (ev) {
       return { title: `${ev.name[this.lang]} — ${dateText}`, desc: ev.desc[this.lang] || dateText };
@@ -562,7 +714,7 @@ export class App {
 
   private refreshUI(): void {
     this.helper.refreshBS(this.tx);
-    const dateText = this.helper.buildDateText(this.tx);
+    const dateText = this.suggestedTopText();
     const t1El = this.root.querySelector('#text1');
     const t2El = this.root.querySelector('#text2');
     const custom1 = this.root.querySelector<HTMLInputElement>('#inp-text1');
@@ -579,9 +731,9 @@ export class App {
       if (t1El) t1El.textContent = this.text1 || dateText;
       if (t2El) t2El.textContent = this.text2;
     } else {
-      if (t1El) t1El.textContent = custom1?.value || dateText;
+      if (t1El) t1El.textContent = custom1?.value.trim() || dateText;
       if (t2El) t2El.textContent = custom2?.value || '';
-      if (custom1 && !custom1.value) custom1.placeholder = dateText;
+      this.updateTopTextHint();
     }
 
     const link = this.root.querySelector<HTMLInputElement>('#share-link');
@@ -599,6 +751,23 @@ export class App {
     this.renderMetrics();
     this.updateShareLocalLabel();
     this.refreshSharePreview();
+    this.updateProgressBar();
+  }
+
+  private updateProgressBar(): void {
+    const bar = this.root.querySelector<HTMLElement>('#progress-bar');
+    const fill = this.root.querySelector<HTMLElement>('#progress-fill');
+    const label = this.root.querySelector('#progress-label');
+    if (!bar || !fill || !label) return;
+    if (this.helper.cm >= 0) {
+      bar.hidden = true;
+      label.textContent = '';
+      return;
+    }
+    bar.hidden = false;
+    const pct = eventProgressPct(this.helper.bornTime);
+    fill.style.width = `${pct}%`;
+    label.textContent = this.tx.progressLabel.replace('{pct}', String(pct));
   }
 
   private renderMetrics(): void {
@@ -753,10 +922,24 @@ export class App {
           btn.textContent = this.tx.copied;
           setTimeout(() => { btn.textContent = orig; }, 1500);
         }
+        this.trackGoal('copy_short_link');
       } catch {
         window.prompt(this.tx.copyTelegram, url);
       }
     });
+    this.root.querySelector('#add-calendar')?.addEventListener('click', () => this.downloadCalendar());
+    this.root.querySelector('#show-qr')?.addEventListener('click', () => void this.showQrCode());
+    this.root.querySelector('#qr-close')?.addEventListener('click', () => {
+      const modal = this.root.querySelector('#qr-modal');
+      if (modal) (modal as HTMLElement).hidden = true;
+    });
+    this.root.querySelector('#save-counter')?.addEventListener('click', () => this.saveCurrentCounter());
+    this.root.querySelector('#theme-select')?.addEventListener('change', (e) => {
+      const v = (e.target as HTMLSelectElement).value as CounterTheme;
+      this.setCounterTheme(v);
+    });
+    const themeSel = this.root.querySelector<HTMLSelectElement>('#theme-select');
+    if (themeSel) themeSel.value = this.counterTheme;
     this.root.querySelector('#toggle-settings')?.addEventListener('click', (e) => {
       e.preventDefault();
       this.settingsOpen = !this.settingsOpen;
@@ -821,6 +1004,9 @@ export class App {
     for (const sel of ['#inp-text1', '#inp-text2']) {
       const input = this.root.querySelector<HTMLInputElement>(sel);
       input?.addEventListener('input', () => {
+        if (sel === '#inp-text1') {
+          this.topTextEdited = input.value.trim().length > 0;
+        }
         this.updateTextLimitHint(input);
         this.refreshUI();
       });
@@ -946,6 +1132,10 @@ export class App {
               <div id="sub-text" class="sub-text"></div>
             </div>
           </div>
+          <div id="progress-bar" class="progress-bar" hidden>
+            <div id="progress-fill" class="progress-fill"></div>
+          </div>
+          <p id="progress-label" class="progress-label"></p>
           <p id="text2" class="counter-text"></p>
         </section>
 
@@ -965,8 +1155,8 @@ export class App {
             <p>${this.tx.restMode}
               <button type="button" id="rest-toggle" class="btn-ghost">${this.tx.restDecimal}</button>
             </p>
-            <label>${this.tx.topText}<input type="text" id="inp-text1" class="wide" maxlength="${MAX_SHARE_TEXT}"></label>
-            <label>${this.tx.bottomText}<input type="text" id="inp-text2" class="wide" maxlength="${MAX_SHARE_TEXT}"></label>
+            <label class="settings-field">${this.tx.topText}<input type="text" id="inp-text1" class="wide" maxlength="${MAX_SHARE_TEXT}"></label>
+            <label class="settings-field">${this.tx.bottomText}<input type="text" id="inp-text2" class="wide" maxlength="${MAX_SHARE_TEXT}"></label>
             <p class="hint text-limit-hint" id="text-limit-hint">${this.tx.textLimitHint.replace('{n}', String(MAX_SHARE_TEXT))}</p>
             <h2>${this.tx.linkHeader}</h2>
             <fieldset class="share-mode">
@@ -983,23 +1173,44 @@ export class App {
               <p class="hint">${this.tx.shareLocalHint}</p>
               <div id="share-annual-wrap" hidden>
                 <label class="share-annual">
-                  <input type="checkbox" id="share-annual" checked>
+                  <input type="checkbox" id="share-annual">
                   ${this.tx.shareAnnual}
                 </label>
                 <p class="hint">${this.tx.shareOnceHint}</p>
               </div>
             </fieldset>
             <p id="share-preview" class="share-preview" hidden></p>
+            <label class="settings-field">${this.tx.counterTheme}
+              <select id="theme-select" class="wide">
+                <option value="default">${this.tx.themeDefault}</option>
+                <option value="cosmo">${this.tx.themeCosmo}</option>
+                <option value="fisic">${this.tx.themePhysics}</option>
+                <option value="lit">${this.tx.themeLit}</option>
+              </select>
+            </label>
             <div class="link-row">
               <input type="text" id="share-link" class="wide" readonly>
               <button type="button" id="copy-link">${this.tx.copyLink}</button>
               <button type="button" id="copy-og-link">${this.tx.copyTelegram}</button>
+              <button type="button" id="add-calendar">${this.tx.addToCalendar}</button>
+              <button type="button" id="show-qr">${this.tx.showQr}</button>
+            </div>
+            <div id="qr-modal" class="qr-modal" hidden>
+              <p><strong>${this.tx.qrTitle}</strong></p>
+              <canvas id="qr-canvas"></canvas>
+              <button type="button" id="qr-close" class="btn-ghost">×</button>
             </div>
             <p class="hint">${this.tx.linkHint}</p>
+            <h2>${this.tx.myCounters}</h2>
+            <div id="saved-counters-list"></div>
+            <button type="button" id="save-counter" class="btn-ghost">${this.tx.myCounters}</button>
           </div>
         </section>
 
-        <footer class="section-footer">${this.tx.footer}</footer>
+        <footer class="section-footer">
+          <section id="popular-counters" class="popular-counters card" hidden></section>
+          <p>${this.tx.footer}</p>
+        </footer>
       </div>
     `;
     this.bind();

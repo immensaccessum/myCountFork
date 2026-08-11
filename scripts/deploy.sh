@@ -26,9 +26,12 @@ cd "$REMOTE_DIR/server" && npm install --omit=dev --no-audit --no-fund --logleve
 mkdir -p "$REMOTE_DIR/server/.data" "$REMOTE_DIR/server/.cache"
 chown -R www-data:www-data "$REMOTE_DIR/server/.data" "$REMOTE_DIR/server/.cache"
 install -m 644 "$REMOTE_DIR/server/mycount-fork.service" /etc/systemd/system/mycount-fork.service
+install -m 644 "$REMOTE_DIR/server/mycount-backup.service" /etc/systemd/system/mycount-backup.service
+install -m 644 "$REMOTE_DIR/server/mycount-backup.timer" /etc/systemd/system/mycount-backup.timer
 systemctl daemon-reload
-systemctl enable mycount-fork
+systemctl enable mycount-fork mycount-backup.timer
 systemctl restart mycount-fork
+systemctl start mycount-backup.timer
 
 # Rebuild nginx SSL vhost if our locations are missing
 if ! grep -q 'location /api/' "$NGINX_SSL" 2>/dev/null; then

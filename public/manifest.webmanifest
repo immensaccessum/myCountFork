@@ -1,0 +1,14 @@
+{
+  "name": "myCount — счётчик времени",
+  "short_name": "myCount",
+  "description": "Онлайн-счётчик времени до любой даты",
+  "start_url": "/ru/",
+  "display": "standalone",
+  "background_color": "#f5f5f5",
+  "theme_color": "#e8452c",
+  "lang": "ru",
+  "icons": [
+    { "src": "/favicon.ico", "sizes": "48x48", "type": "image/x-icon" },
+    { "src": "/og-card.png", "sizes": "1200x630", "type": "image/png", "purpose": "any" }
+  ]
+}

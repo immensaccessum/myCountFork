@@ -484,6 +484,24 @@ html, body {
   font-size: 0.9rem;
 }
 
+.settings-pad label.settings-field {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+  font-weight: 500;
+}
+
+.settings-pad label.settings-field .wide {
+  width: 100%;
+  font-weight: normal;
+}
+
+.settings-pad .text-limit-hint {
+  margin: -0.25rem 0 1rem;
+}
+
 .share-mode {
   margin: 0.75rem 0 1rem;
   padding: 0.75rem 1rem;
@@ -627,4 +645,103 @@ body[data-mode='4'] .counter-wrap {
     width: 100%;
     min-height: 0;
   }
+}
+
+.landing-seo {
+  max-width: 900px;
+  margin: 1rem auto;
+  padding: 1rem;
+  position: relative;
+  z-index: 1;
+}
+
+.landing-seo h1 {
+  font-size: 1.35rem;
+  margin: 0 0 0.5rem;
+}
+
+.popular-counters {
+  margin-bottom: 1rem;
+}
+
+.popular-counters h2 {
+  font-size: 1.1rem;
+  margin: 0 0 0.75rem;
+}
+
+.popular-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+}
+
+.popular-link {
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+
+.popular-link:hover {
+  text-decoration: underline;
+}
+
+.counter-wrap--themed {
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.progress-bar {
+  height: 8px;
+  background: var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 0.5rem 0;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--accent);
+  width: 0;
+  transition: width 0.3s ease;
+}
+
+.progress-label {
+  font-size: 0.85rem;
+  color: var(--muted);
+  text-align: center;
+  margin: 0.25rem 0;
+}
+
+.qr-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  gap: 0.75rem;
+}
+
+.qr-modal[hidden] {
+  display: none !important;
+}
+
+.qr-modal canvas {
+  background: #fff;
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.saved-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.saved-item a {
+  color: var(--accent);
 }

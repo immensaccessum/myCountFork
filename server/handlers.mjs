@@ -1,5 +1,6 @@
 import { getCountries, getHolidays } from './nager-cache.mjs';
 import { buildEventsCatalog } from './events-catalog.mjs';
+import { findLandingById, findLandingBySlug, getLandingPageDefs, landingEventFromDef } from './landing-pages.mjs';
 
 function sendJson(res, status, data) {
   res.statusCode = status;
@@ -41,6 +42,28 @@ export async function handleApiRequest(req, res, next) {
     } catch (e) {
       sendJson(res, 502, { error: String(e) });
     }
+    return;
+  }
+
+  if (path === '/api/landing-pages') {
+    sendJson(res, 200, getLandingPageDefs());
+    return;
+  }
+
+  const lm = path.match(/^\/api\/landing\/([A-Za-z0-9-]+)$/);
+  if (lm) {
+    const lang = (url.split('?')[1] && new URLSearchParams(url.split('?')[1]).get('lang')) || 'ru';
+    const def = findLandingBySlug(lm[1], lang) || findLandingById(lm[1]);
+    if (!def) {
+      sendJson(res, 404, { error: 'not found' });
+      return;
+    }
+    sendJson(res, 200, landingEventFromDef(def));
+    return;
+  }
+
+  if (path === '/api/health') {
+    sendJson(res, 200, { ok: true, uptime: process.uptime() });
     return;
   }
 

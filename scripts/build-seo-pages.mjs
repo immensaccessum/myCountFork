@@ -1,14 +1,12 @@
 #!/usr/bin/env node
 /**
- * Post-build SEO: writes dist/ru/index.html and dist/en/index.html with
- * language-specific title, description, canonical, hreflang, OG tags and
- * JSON-LD, plus dist/sitemap.xml. Crawlers get proper meta without JS.
- *
- * When the domain changes, update BASE_URL here and in public/robots.txt.
+ * Post-build SEO: writes dist/ru/index.html, dist/en/index.html,
+ * landing pages dist/do/<slug>/ and dist/until/<slug>/, plus sitemap.xml.
  */
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { getLandingPageDefs } from '../server/landing-pages.mjs';
 
 const BASE_URL = 'https://app4.letovrf.ru';
 const DIST = join(dirname(fileURLToPath(import.meta.url)), '..', 'dist');
@@ -28,29 +26,32 @@ const PAGES = {
   },
 };
 
-function metaBlock(lang) {
+function metaBlock(lang, { title, desc, url, altRu, altEn }) {
   const p = PAGES[lang];
-  const url = `${BASE_URL}/${lang}/`;
   const jsonLd = JSON.stringify({
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
-    name: p.name,
+    name: title || p.name,
     url,
-    description: p.desc,
+    description: desc || p.desc,
     inLanguage: lang,
     applicationCategory: 'UtilityApplication',
     operatingSystem: 'Any',
     offers: { '@type': 'Offer', price: '0' },
   });
-  return `<title>${p.title}</title>
-  <meta name="description" content="${p.desc}">
+  const pageTitle = title || p.title;
+  const pageDesc = desc || p.desc;
+  const ruAlt = altRu || `${BASE_URL}/ru/`;
+  const enAlt = altEn || `${BASE_URL}/en/`;
+  return `<title>${pageTitle}</title>
+  <meta name="description" content="${pageDesc}">
   <link rel="canonical" href="${url}">
-  <link rel="alternate" hreflang="ru" href="${BASE_URL}/ru/">
-  <link rel="alternate" hreflang="en" href="${BASE_URL}/en/">
+  <link rel="alternate" hreflang="ru" href="${ruAlt}">
+  <link rel="alternate" hreflang="en" href="${enAlt}">
   <link rel="alternate" hreflang="x-default" href="${BASE_URL}/ru/">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="${p.title}">
-  <meta property="og:description" content="${p.desc}">
+  <meta property="og:title" content="${pageTitle}">
+  <meta property="og:description" content="${pageDesc}">
   <meta property="og:url" content="${url}">
   <meta property="og:site_name" content="myCount">
   <meta property="og:locale" content="${p.locale}">
@@ -60,37 +61,73 @@ function metaBlock(lang) {
   <script type="application/ld+json">${jsonLd}</script>`;
 }
 
+function landingPresetScript(eventId) {
+  return `<script>window.__MC_PRESET={eventId:${JSON.stringify(eventId)},wm:4};</script>`;
+}
+
+function landingSeoBlock(h1, body) {
+  return `<article class="landing-seo" id="landing-seo">
+  <h1>${h1}</h1>
+  <p>${body}</p>
+</article>`;
+}
+
 const baseHtml = readFileSync(join(DIST, 'index.html'), 'utf8');
 if (!baseHtml.includes('<title>myCount</title>')) {
   throw new Error('dist/index.html: expected <title>myCount</title> marker not found');
 }
 
+const sitemapUrls = [];
+
 for (const lang of Object.keys(PAGES)) {
-  let html = baseHtml.replace('<title>myCount</title>', metaBlock(lang));
+  let html = baseHtml.replace('<title>myCount</title>', metaBlock(lang, { url: `${BASE_URL}/${lang}/` }));
   html = html.replace('<html lang="ru">', `<html lang="${lang}">`);
   mkdirSync(join(DIST, lang), { recursive: true });
   writeFileSync(join(DIST, lang, 'index.html'), html);
+  sitemapUrls.push({
+    loc: `${BASE_URL}/${lang}/`,
+    altRu: `${BASE_URL}/ru/`,
+    altEn: `${BASE_URL}/en/`,
+  });
+}
+
+for (const def of getLandingPageDefs()) {
+  for (const lang of ['ru', 'en']) {
+    const slug = lang === 'ru' ? def.slugRu : def.slugEn;
+    const prefix = lang === 'ru' ? 'do' : 'until';
+    const url = `${BASE_URL}/${prefix}/${slug}/`;
+    const altRu = `${BASE_URL}/do/${def.slugRu}/`;
+    const altEn = `${BASE_URL}/until/${def.slugEn}/`;
+    const title = lang === 'ru' ? def.titleRu : def.titleEn;
+    const desc = lang === 'ru' ? def.descRu : def.descEn;
+    const h1 = lang === 'ru' ? def.h1Ru : def.h1En;
+    const body = lang === 'ru' ? def.bodyRu : def.bodyEn;
+    let html = baseHtml.replace('<title>myCount</title>', metaBlock(lang, { title, desc, url, altRu, altEn }));
+    html = html.replace('<html lang="ru">', `<html lang="${lang}">`);
+    html = html.replace('<div id="app"></div>', `${landingSeoBlock(h1, body)}\n  <div id="app"></div>\n  ${landingPresetScript(def.id)}`);
+    const outDir = join(DIST, prefix, slug);
+    mkdirSync(outDir, { recursive: true });
+    writeFileSync(join(outDir, 'index.html'), html);
+    sitemapUrls.push({ loc: url, altRu, altEn });
+  }
 }
 
 const now = new Date().toISOString().slice(0, 10);
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
-  <url>
-    <loc>${BASE_URL}/ru/</loc>
+${sitemapUrls
+  .map(
+    (u) => `  <url>
+    <loc>${u.loc}</loc>
     <lastmod>${now}</lastmod>
-    <changefreq>weekly</changefreq>
-    <xhtml:link rel="alternate" hreflang="en" href="${BASE_URL}/en/"/>
-    <xhtml:link rel="alternate" hreflang="ru" href="${BASE_URL}/ru/"/>
-  </url>
-  <url>
-    <loc>${BASE_URL}/en/</loc>
-    <lastmod>${now}</lastmod>
-    <changefreq>weekly</changefreq>
-    <xhtml:link rel="alternate" hreflang="ru" href="${BASE_URL}/ru/"/>
-    <xhtml:link rel="alternate" hreflang="en" href="${BASE_URL}/en/"/>
-  </url>
+    <changefreq>daily</changefreq>
+    <xhtml:link rel="alternate" hreflang="ru" href="${u.altRu}"/>
+    <xhtml:link rel="alternate" hreflang="en" href="${u.altEn}"/>
+  </url>`,
+  )
+  .join('\n')}
 </urlset>
 `;
 writeFileSync(join(DIST, 'sitemap.xml'), sitemap);
 
-console.log('SEO pages: dist/ru/index.html, dist/en/index.html, dist/sitemap.xml');
+console.log(`SEO pages: ${sitemapUrls.length} URLs in sitemap`);

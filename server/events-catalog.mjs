@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getHolidays } from './nager-cache.mjs';
+import { getLandingEvents } from './landing-pages.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = path.join(__dirname, 'data/calendar');
@@ -10,7 +11,7 @@ const SKIP_HOLIDAY_NAMES = new Set(['Новогодние каникулы', 'Ne
 const MSK_TZ_SEC = 3 * 3600;
 const MSK_OFFSET_MS = MSK_TZ_SEC * 1000;
 
-const SOURCE_RANK = { history: 0, annual: 1, milestone: 2, holiday: 3 };
+const SOURCE_RANK = { history: 0, annual: 1, milestone: 2, landing: 2, holiday: 3 };
 
 /** @type {Map<string, { at: number, data: unknown }>} */
 const catalogCache = new Map();
@@ -215,6 +216,7 @@ export async function buildEventsCatalog(cc) {
     ...annualItems(global.annual, false),
     ...annualItems(local.annual, useMsk),
     ...getMilestones(),
+    ...getLandingEvents(),
     ...(await holidayItems(country)),
   ]);
 

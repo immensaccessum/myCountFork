@@ -87,4 +87,18 @@ export interface LocaleStrings {
   eventSourceAnnual: string;
   eventSourceMilestone: string;
   eventSourceHoliday: string;
+  eventSourceLanding: string;
+  popularCounters: string;
+  addToCalendar: string;
+  showQr: string;
+  qrTitle: string;
+  myCounters: string;
+  myCountersEmpty: string;
+  myCountersDelete: string;
+  counterTheme: string;
+  themeDefault: string;
+  themeCosmo: string;
+  themePhysics: string;
+  themeLit: string;
+  progressLabel: string;
 }

@@ -501,11 +501,24 @@ export class App {
 
   private ogTitleDesc(): { title: string; desc: string } {
     const ev = findEventById(this.eventCatalog, this.currentEventEid);
-    const title = ev
-      ? `${ev.name[this.lang]} — ${this.helper.buildDateText(this.tx)}`
-      : this.helper.buildDateText(this.tx);
-    const desc = ev?.desc[this.lang] || title;
-    return { title, desc };
+
+    // Local mode counts to wall-clock in the recipient's zone: no author UTC offset in text.
+    let dateText: string;
+    if (this.shareMode === 'local') {
+      const spec = this.readFormLocalSpec();
+      const label = formatLocalDateLabel(spec, this.lang, this.tx.months, this.tx.monthRp);
+      dateText = this.tx.shareLocalTemplate.replace('{date}', label);
+    } else {
+      dateText = this.helper.buildDateText(this.tx);
+    }
+
+    if (ev) {
+      return { title: `${ev.name[this.lang]} — ${dateText}`, desc: ev.desc[this.lang] || dateText };
+    }
+
+    const custom = (this.root.querySelector<HTMLInputElement>('#inp-text1')?.value || this.text1).trim();
+    if (custom) return { title: custom, desc: dateText };
+    return { title: dateText, desc: dateText };
   }
 
   private ogShareUrl(): string {

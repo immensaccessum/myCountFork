@@ -85,6 +85,31 @@ html, body {
   font: inherit;
 }
 
+/* Единая реакция на наведение и клавиатурный фокус для всех интерактивных элементов */
+.nav a, .btn-ghost, .btn-link, .presets button, .tz-mode-btn, .event-arrow,
+.life-nav button, .link-row button, .metrics a {
+  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+.nav a:hover, .btn-ghost:hover, .btn-link:hover,
+.presets button:hover, .event-arrow:hover,
+.life-nav button:not(:disabled):hover, .link-row button:hover,
+.tz-mode-btn:not(.active):hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  outline-offset: 1px;
+}
+
+.nav a.nav-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
 .card {
   background: var(--card);
   border: 1px solid var(--border);
@@ -244,6 +269,10 @@ html, body {
   text-decoration: none;
   padding: 0.2rem 0.5rem;
   border-radius: 4px;
+}
+
+.metrics a:hover:not(.active) {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
 }
 
 .metrics a.active {
@@ -526,6 +555,16 @@ html, body {
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
+}
+
+.link-row button {
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
 }
 
 .hint {

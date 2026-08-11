@@ -95,6 +95,10 @@ export interface LocaleStrings {
   myCounters: string;
   myCountersEmpty: string;
   myCountersDelete: string;
+  myCountersSave: string;
+  savedOk: string;
+  searchPlaceholder: string;
+  counterClickHint: string;
   counterTheme: string;
   themeDefault: string;
   themeCosmo: string;

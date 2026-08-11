@@ -71,6 +71,7 @@ export class App {
   private savedCounters: SavedCounter[] = loadSavedCounters();
   private landingH1 = '';
   private landingIntro = '';
+  private dateInputTimer = 0;
 
   constructor(root: HTMLElement) {
     this.root = root;
@@ -89,7 +90,9 @@ export class App {
   }
 
   private initTheme(): void {
-    const stored = localStorage.getItem('mc_theme') || 'light';
+    const stored =
+      localStorage.getItem('mc_theme') ||
+      (window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
     document.documentElement.dataset.theme = stored;
   }
 
@@ -650,8 +653,26 @@ export class App {
     return html;
   }
 
+  /** «31 февраля» не должно молча перетекать в март: ограничиваем день длиной месяца. */
+  private clampDayField(): void {
+    const yInp = this.root.querySelector<HTMLInputElement>('#inp-year');
+    const mInp = this.root.querySelector<HTMLSelectElement>('#inp-month');
+    const dInp = this.root.querySelector<HTMLInputElement>('#inp-day');
+    if (!dInp) return;
+    const y = parseInt(yInp?.value || '2000', 10);
+    const m = parseInt(mInp?.value || '0', 10);
+    const dt = new Date(2000, 0, 1);
+    dt.setFullYear(Number.isFinite(y) ? y : 2000, m + 1, 0);
+    const dim = dt.getDate() || 31;
+    dInp.max = String(dim);
+    const d = parseInt(dInp.value || '1', 10);
+    if (Number.isFinite(d) && d > dim) dInp.value = String(dim);
+    else if (Number.isFinite(d) && d < 1) dInp.value = '1';
+  }
+
   private bornFromForm(): void {
     this.eventOffset = 0;
+    this.clampDayField();
     if (this.shareMode === 'local' || this.localDateActive) {
       const spec = this.readFormLocalSpec();
       this.localSpec = spec;
@@ -731,6 +752,8 @@ export class App {
     show('.section-header', true);
     show('.section-intro', this.wm === 3);
     show('.section-footer', this.wm !== 4);
+    this.root.querySelector('#nav-events')?.classList.toggle('nav-active', this.wm === 1);
+    this.root.querySelector('#nav-new')?.classList.toggle('nav-active', this.wm === 3);
     this.applyLandingIntro();
   }
 
@@ -838,6 +861,12 @@ export class App {
     this.updateShareLocalLabel();
     this.refreshSharePreview();
     this.updateProgressBar();
+    this.updateRestToggleLabel();
+  }
+
+  private updateRestToggleLabel(): void {
+    const btn = this.root.querySelector('#rest-toggle');
+    if (btn) btn.textContent = this.helper.restMode === 0 ? this.tx.restDecimal : this.tx.restUnits;
   }
 
   private updateProgressBar(): void {
@@ -1061,11 +1090,29 @@ export class App {
     });
     this.root.querySelector('#add-calendar')?.addEventListener('click', () => this.downloadCalendar());
     this.root.querySelector('#show-qr')?.addEventListener('click', () => void this.showQrCode());
-    this.root.querySelector('#qr-close')?.addEventListener('click', () => {
+    const closeQr = () => {
       const modal = this.root.querySelector('#qr-modal');
       if (modal) (modal as HTMLElement).hidden = true;
+    };
+    this.root.querySelector('#qr-close')?.addEventListener('click', closeQr);
+    this.root.querySelector('#qr-modal')?.addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) closeQr();
     });
-    this.root.querySelector('#save-counter')?.addEventListener('click', () => this.saveCurrentCounter());
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeQr();
+    });
+    this.root.querySelector('#save-counter')?.addEventListener('click', () => {
+      this.saveCurrentCounter();
+      const btn = this.root.querySelector('#save-counter');
+      if (btn) {
+        const orig = btn.textContent;
+        btn.textContent = this.tx.savedOk;
+        setTimeout(() => { btn.textContent = orig; }, 1500);
+      }
+    });
+    this.root.querySelector<HTMLInputElement>('#share-link')?.addEventListener('focus', (e) => {
+      (e.target as HTMLInputElement).select();
+    });
     this.root.querySelector('#theme-select')?.addEventListener('change', (e) => {
       const v = (e.target as HTMLSelectElement).value as CounterTheme;
       this.setCounterTheme(v);
@@ -1103,7 +1150,13 @@ export class App {
       });
     });
     ['#inp-year', '#inp-month', '#inp-day', '#inp-hour', '#inp-min', '#inp-sec'].forEach((sel) => {
-      this.root.querySelector(sel)?.addEventListener('change', () => this.bornFromForm());
+      const el = this.root.querySelector(sel);
+      el?.addEventListener('change', () => this.bornFromForm());
+      // Live preview while typing (debounced so partial input like «20» doesn't jump around).
+      el?.addEventListener('input', () => {
+        clearTimeout(this.dateInputTimer);
+        this.dateInputTimer = window.setTimeout(() => this.bornFromForm(), 500);
+      });
     });
     this.root.querySelector('#share-annual')?.addEventListener('change', () => {
       if (this.shareMode === 'local') this.bornFromForm();
@@ -1268,7 +1321,7 @@ export class App {
           <div class="counter-area">
             <div class="counter-row">
               <div class="counter-canvas-wrap">
-                <canvas id="counter-canvas" width="800" height="85"></canvas>
+                <canvas id="counter-canvas" width="800" height="85" title="${this.tx.counterClickHint}"></canvas>
               </div>
               <div id="sub-text" class="sub-text"></div>
             </div>
@@ -1288,7 +1341,7 @@ export class App {
                 <th class="life-th-search">
                   <label class="life-search">
                     <img src="/cimg/001/i/find.png" alt="" width="18" height="18" id="life-find-icon" class="life-find-icon">
-                    <input type="text" id="life-find" class="life-find-input" inputmode="numeric" autocomplete="off" aria-label="${this.tx.search}">
+                    <input type="text" id="life-find" class="life-find-input" inputmode="numeric" autocomplete="off" aria-label="${this.tx.search}" placeholder="${this.tx.searchPlaceholder}">
                   </label>
                 </th>
               </tr>
@@ -1357,7 +1410,7 @@ export class App {
             <p class="hint">${this.tx.linkHint}</p>
             <h2>${this.tx.myCounters}</h2>
             <div id="saved-counters-list"></div>
-            <button type="button" id="save-counter" class="btn-ghost">${this.tx.myCounters}</button>
+            <button type="button" id="save-counter" class="btn-ghost">${this.tx.myCountersSave}</button>
           </div>
         </section>
 

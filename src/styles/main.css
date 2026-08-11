@@ -54,24 +54,177 @@ html, body {
 
 .section-header {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
   margin-bottom: 1rem;
+  overflow-x: clip;
+}
+
+.section-header:has(.nav--open) {
+  overflow: visible;
+}
+
+.logo-link {
+  flex: 0 0 auto;
 }
 
 .logo-link img {
   display: block;
-  max-width: 100%;
+  width: 180px;
+  max-width: none;
   height: auto;
 }
 
 .nav {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 0.75rem;
   align-items: center;
+  position: relative;
+  flex: 0 0 auto;
+  justify-content: flex-end;
+}
+
+.nav-primary {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.nav--compact .nav-primary {
+  display: none;
+}
+
+.nav-items {
+  display: none;
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  right: 0;
+  z-index: 40;
+  min-width: 12rem;
+  max-width: min(20rem, calc(100vw - 2rem));
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 0.35rem;
+  padding: 0.5rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--text) 12%, transparent);
+}
+
+.nav--open .nav-items {
+  display: flex;
+}
+
+.nav-items > a,
+.nav-items > button {
+  width: 100%;
+  text-align: left;
+  box-sizing: border-box;
+  white-space: nowrap;
+}
+
+.nav--compact #nav-between {
+  margin-top: 0.15rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid var(--border);
+}
+
+.nav-menu-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  max-width: min(100%, 18rem);
+  color: var(--accent);
+  text-decoration: none;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.35rem 0.75rem;
+  cursor: pointer;
+  font: inherit;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+.nav-menu-toggle:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.nav-menu-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav-menu-arrow {
+  flex-shrink: 0;
+  font-size: 0.75em;
+  line-height: 1;
+  transition: transform 0.15s ease;
+}
+
+.nav-menu-burger {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  width: 1.1rem;
+  flex-shrink: 0;
+}
+
+.nav-menu-burger > span {
+  display: block;
+  height: 2px;
+  width: 100%;
+  border-radius: 1px;
+  background: currentColor;
+}
+
+/* Широкий режим: всегда гамбургер для доп. пунктов */
+.nav:not(.nav--compact) .nav-menu-label,
+.nav:not(.nav--compact) .nav-menu-arrow {
+  display: none;
+}
+
+.nav:not(.nav--compact) .nav-menu-burger {
+  display: flex;
+}
+
+.nav:not(.nav--compact) .nav-menu-toggle {
+  padding: 0.45rem 0.55rem;
+  max-width: none;
+}
+
+/* Второй режим: подпись активной вкладки + ▾, всё в меню */
+.nav--compact:not(.nav--icon) .nav-menu-burger {
+  display: none;
+}
+
+.nav--compact.nav--open .nav-menu-arrow {
+  transform: rotate(180deg);
+}
+
+/* Третий режим: только три полоски */
+.nav--icon .nav-menu-label,
+.nav--icon .nav-menu-arrow {
+  display: none;
+}
+
+.nav--icon .nav-menu-burger {
+  display: flex;
+}
+
+.nav--icon .nav-menu-toggle {
+  padding: 0.45rem 0.55rem;
+  max-width: none;
 }
 
 .nav a, .btn-ghost, .btn-link {
@@ -83,15 +236,17 @@ html, body {
   padding: 0.35rem 0.75rem;
   cursor: pointer;
   font: inherit;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* Единая реакция на наведение и клавиатурный фокус для всех интерактивных элементов */
-.nav a, .btn-ghost, .btn-link, .presets button, .event-arrow,
+.nav a, .btn-ghost, .btn-link, .nav-menu-toggle, .presets button, .event-arrow,
 .life-nav button, .link-row button, .metrics a {
   transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
 }
 
-.nav a:hover, .btn-ghost:hover, .btn-link:hover,
+.nav a:hover, .btn-ghost:hover, .btn-link:hover, .nav-menu-toggle:hover,
 .presets button:hover, .event-arrow:hover,
 .life-nav button:not(:disabled):hover, .link-row button:hover {
   border-color: var(--accent);
@@ -103,7 +258,8 @@ html, body {
   outline-offset: 1px;
 }
 
-.nav a.nav-active {
+.nav a.nav-active,
+.nav button.nav-active {
   background: var(--accent);
   border-color: var(--accent);
   color: #fff;
@@ -648,12 +804,12 @@ body[data-mode='4'] .counter-wrap {
 
 @media (max-width: 600px) {
   .section-header {
-    flex-direction: column;
-    align-items: flex-start;
+    flex-wrap: nowrap;
+    align-items: center;
   }
 
   .nav {
-    width: 100%;
+    flex: 0 0 auto;
   }
 
   .date-form {
@@ -736,6 +892,192 @@ body[data-mode='4'] .counter-wrap {
   margin: 0;
   color: var(--muted);
   line-height: 1.5;
+}
+
+.between-form {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 1rem;
+}
+
+.between-result {
+  margin-top: 1rem;
+}
+
+.between-open-wrap {
+  margin-top: 1rem;
+}
+
+.lifegrid-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.35rem;
+}
+
+.lifegrid-heading h2 {
+  margin: 0;
+}
+
+.lifegrid-units {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0.5rem 0 0.75rem;
+}
+
+.lifegrid-unit {
+  font: inherit;
+  cursor: pointer;
+  color: var(--muted);
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.3rem 0.7rem;
+}
+
+.lifegrid-unit:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.lifegrid-unit--active {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.lifegrid-days-hint {
+  color: var(--accent);
+}
+
+.lifegrid-form {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1rem 1.5rem;
+}
+
+.lifegrid-form > .settings-field {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.35rem;
+  margin: 0;
+  font-weight: 500;
+  flex: 0 0 auto;
+}
+
+.lifegrid-form > .settings-field .wide {
+  width: auto;
+  font-weight: normal;
+  box-sizing: border-box;
+}
+
+.lifegrid-summary {
+  margin: 0.75rem 0;
+  color: var(--muted);
+}
+
+.lifegrid-marks-hint {
+  margin-top: -0.35rem;
+}
+
+.lifegrid-cell-mark {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.lifegrid-canvas-wrap {
+  position: relative;
+  width: 100%;
+  overflow-x: auto;
+}
+
+#lifegrid-canvas {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  cursor: pointer;
+}
+
+.lifegrid-cell-info {
+  position: fixed;
+  left: 50%;
+  bottom: 1rem;
+  top: auto;
+  z-index: 30;
+  box-sizing: border-box;
+  width: min(calc(100% - 2rem), 870px);
+  margin: 0;
+  padding: 0.75rem 1rem;
+  transform: translateX(-50%);
+  background: color-mix(in srgb, var(--card) 94%, transparent);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--text) 12%, transparent);
+  backdrop-filter: blur(6px);
+}
+
+.lifegrid-cell-info--top {
+  top: 1rem;
+  bottom: auto;
+}
+
+.lifegrid-cell-info p {
+  margin: 0.35rem 0;
+}
+
+.lifegrid-fs-exit {
+  display: none;
+}
+
+body.lifegrid-fullscreen {
+  overflow: hidden;
+}
+
+body.lifegrid-fullscreen .lifegrid-canvas-wrap {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+body.lifegrid-fullscreen #lifegrid-canvas {
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: none;
+}
+
+body.lifegrid-fullscreen .lifegrid-fs-exit {
+  display: inline-flex;
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 1002;
+  background: var(--card);
+}
+
+body.lifegrid-fullscreen .lifegrid-cell-info {
+  position: fixed;
+  left: 0.75rem;
+  right: 0.75rem;
+  bottom: 0.75rem;
+  top: auto;
+  z-index: 1001;
+  width: auto;
+  transform: none;
+}
+
+body.lifegrid-fullscreen .lifegrid-cell-info--top {
+  top: 3.25rem;
+  bottom: auto;
 }
 
 .popular-counters {

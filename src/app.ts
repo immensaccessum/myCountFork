@@ -37,8 +37,23 @@ import { fetchLandingEvent, fetchPopularLandings } from './lib/landing-pages';
 import { buildIcsFile, downloadIcs, icsFilename, isAnnualFromSpec } from './lib/ics';
 import { deleteSavedCounter, loadSavedCounters, saveCounter, type SavedCounter } from './lib/saved-counters';
 import { eventProgressPct } from './lib/progress';
+import { daysBetween, monthsApprox, parseYmd, ymdLocal } from './lib/days-between';
+import {
+  cellFromPoint,
+  cellStartDate,
+  cellsLived,
+  colsForUnit,
+  lifeMilestones,
+  parseLifeGridUnit,
+  totalCells,
+  type LifeGridUnit,
+  type LifeMilestone,
+} from './lib/life-grid';
+import { ALLOWED_YEARS, loadLifeGridPrefs, saveLifeGridPrefs } from './lib/life-grid-store';
 
 const DEFAULT_BORN = 1332104400000;
+
+type AppView = 'events' | 'new' | 'counter' | 'between' | 'lifegrid';
 
 export class App {
   private tx: LocaleStrings;
@@ -47,6 +62,17 @@ export class App {
   private helper!: CounterHelper;
   private counter!: DigitCounter;
   private wm: ViewMode = 3;
+  private betweenMode = false;
+  private lifeGridMode = false;
+  private lifeGridFullscreen = false;
+  private lifeGridUnit: LifeGridUnit = 'weeks';
+  private lifeGridCellW = 0;
+  private lifeGridCellH = 0;
+  private lifeGridGap = 1;
+  private lifeGridCols = 52;
+  private lifeGridRows = 80;
+  private lifeGridSelected: number | null = null;
+  private lifeGridMarks = new Map<number, LifeMilestone>();
   private text1 = '';
   private text2 = '';
   private eventWid = 1;
@@ -66,6 +92,8 @@ export class App {
   private landingH1 = '';
   private landingIntro = '';
   private dateInputTimer = 0;
+  private navResizeObserver: ResizeObserver | null = null;
+  private navLayoutTimer = 0;
 
   constructor(root: HTMLElement) {
     this.root = root;
@@ -81,6 +109,7 @@ export class App {
     this.onResize();
     this.loop();
     window.addEventListener('resize', () => this.onResize());
+    window.addEventListener('popstate', () => this.restoreFromLocation());
   }
 
   private initTheme(): void {
@@ -96,6 +125,7 @@ export class App {
     localStorage.setItem('mc_theme', next);
     this.drawBg();
     this.applyCounterTheme();
+    if (this.lifeGridMode) this.drawLifeGrid();
   }
 
   private getDigitSprite(): string {
@@ -149,6 +179,14 @@ export class App {
       spac: 50,
     });
     this.applyCounterTheme();
+
+    const viewParam = new URLSearchParams(location.search).get('view');
+    if (viewParam === 'lifegrid' || viewParam === 'between') {
+      this.restoreToolView(viewParam);
+      void this.loadPopularLandings();
+      this.renderSavedCounters();
+      return;
+    }
 
     if (this.wm === 1) {
       this.applyViewMode();
@@ -358,6 +396,7 @@ export class App {
       .map((p) => `<a href="${p.href}" class="popular-link">${p.label}</a>`)
       .join('');
     el.innerHTML = `<h2>${this.tx.popularCounters}</h2><nav class="popular-nav">${links}</nav>`;
+    (el as HTMLElement).hidden = this.betweenMode || this.lifeGridMode || this.wm !== 3;
   }
 
   private shouldBootstrapDefaultDate(
@@ -749,21 +788,516 @@ export class App {
   }
 
   private applyViewMode(): void {
-    document.body.dataset.mode = String(this.wm);
+    document.body.dataset.mode = this.lifeGridMode
+      ? 'lifegrid'
+      : this.betweenMode
+        ? 'between'
+        : String(this.wm);
     const show = (sel: string, on: boolean) => {
       const el = this.root.querySelector(sel);
       if (el) (el as HTMLElement).hidden = !on;
     };
-    show('.section-editor', this.wm === 3);
-    show('.section-events', this.wm === 1);
-    show('.section-life', this.wm === 3);
-    show('.section-settings', this.wm !== 4);
+    const main = !this.betweenMode && !this.lifeGridMode;
+    show('.section-between', this.betweenMode);
+    show('.section-lifegrid', this.lifeGridMode);
+    show('.section-editor', main && this.wm === 3);
+    show('.section-events', main && this.wm === 1);
+    show('.section-life', main && this.wm === 3);
+    show('.section-settings', main && this.wm !== 4);
     show('.section-header', true);
-    show('.section-intro', this.wm === 3 && !this.landingH1);
-    show('.section-footer', this.wm !== 4);
-    this.root.querySelector('#nav-events')?.classList.toggle('nav-active', this.wm === 1);
-    this.root.querySelector('#nav-new')?.classList.toggle('nav-active', this.wm === 3);
-    this.applyLandingIntro();
+    show('.section-intro', main && this.wm === 3 && !this.landingH1);
+    show('.section-footer', main && this.wm !== 4);
+    show('.counter-wrap', main);
+    show('#popular-counters', main && this.wm === 3 && this.popularLandings.length > 0);
+    this.root.querySelector('#nav-events')?.classList.toggle('nav-active', main && this.wm === 1);
+    this.root.querySelector('#nav-new')?.classList.toggle('nav-active', main && this.wm === 3);
+    this.root.querySelector('#nav-between')?.classList.toggle('nav-active', this.betweenMode);
+    this.root.querySelector('#nav-lifegrid')?.classList.toggle('nav-active', this.lifeGridMode);
+    this.updateNavMenuLabel();
+    this.scheduleNavCompact();
+    if (main) this.applyLandingIntro();
+    else {
+      const intro = this.root.querySelector('.section-landing-intro');
+      if (intro) (intro as HTMLElement).hidden = true;
+    }
+    if (this.lifeGridMode) {
+      requestAnimationFrame(() => this.drawLifeGrid());
+    }
+  }
+
+  private activeNavLabel(): string {
+    if (this.lifeGridMode) return this.tx.navLifeGrid;
+    if (this.betweenMode) return this.tx.navBetween;
+    if (this.wm === 1) return this.tx.navEvents;
+    if (this.wm === 3) return this.tx.navNew;
+    return this.tx.navMenu;
+  }
+
+  private updateBetweenResult(): void {
+    const fromEl = this.root.querySelector<HTMLInputElement>('#bd-from');
+    const toEl = this.root.querySelector<HTMLInputElement>('#bd-to');
+    const resultEl = this.root.querySelector<HTMLElement>('#bd-result');
+    const openEl = this.root.querySelector<HTMLAnchorElement>('#bd-open');
+    if (!fromEl || !toEl || !resultEl || !openEl) return;
+
+    if (!fromEl.value || !toEl.value) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const jan1 = new Date(today.getFullYear(), 0, 1);
+      if (!fromEl.value) fromEl.value = ymdLocal(jan1);
+      if (!toEl.value) toEl.value = ymdLocal(today);
+    }
+
+    const a = parseYmd(fromEl.value);
+    const b = parseYmd(toEl.value);
+    if (!a || !b) {
+      resultEl.hidden = true;
+      openEl.hidden = true;
+      return;
+    }
+    const days = daysBetween(a, b);
+    const abs = Math.abs(days);
+    const weeks = Math.floor(abs / 7);
+    const remDays = abs % 7;
+    const months = Math.abs(monthsApprox(a, b));
+    const sign = days < 0 ? '−' : '';
+    const loc = this.lang === 'ru' ? 'ru-RU' : 'en-US';
+    const fmt = (n: number) => Math.abs(n).toLocaleString(loc);
+    resultEl.hidden = false;
+    resultEl.innerHTML = `
+      <strong>${this.tx.betweenResult}</strong>
+      ${sign}${fmt(abs)} ${this.tx.betweenDays}
+      ${weeks ? `· ${sign}${weeks} ${this.tx.betweenWeeks}${remDays ? ` ${this.tx.betweenAnd} ${remDays} ${this.tx.betweenDays}` : ''}` : ''}
+      ${months ? `· ${sign}${months} ${this.tx.betweenMonths}` : ''}
+    `;
+    const target = days >= 0 ? b : a;
+    openEl.href = `${langBasePath(this.lang)}?wm=4&fid=4&t=${target.getTime()}`;
+    openEl.hidden = false;
+  }
+
+  private getLifeGridBirth(): Date | null {
+    const el = this.root.querySelector<HTMLInputElement>('#lg-birth');
+    if (!el?.value) return null;
+    return parseYmd(el.value);
+  }
+
+  private getLifeGridYears(): number {
+    const el = this.root.querySelector<HTMLSelectElement>('#lg-years');
+    const y = Number(el?.value || 80);
+    return ALLOWED_YEARS.includes(y as (typeof ALLOWED_YEARS)[number]) ? y : 80;
+  }
+
+  private persistLifeGridPrefs(): void {
+    const el = this.root.querySelector<HTMLInputElement>('#lg-birth');
+    if (!el?.value) return;
+    saveLifeGridPrefs({
+      birth: el.value,
+      years: this.getLifeGridYears(),
+      unit: this.lifeGridUnit,
+    });
+  }
+
+  private syncLifeGridFormFromStore(): void {
+    const prefs = loadLifeGridPrefs();
+    const birthEl = this.root.querySelector<HTMLInputElement>('#lg-birth');
+    const yearsEl = this.root.querySelector<HTMLSelectElement>('#lg-years');
+    if (birthEl && prefs?.birth) birthEl.value = prefs.birth;
+    if (yearsEl) yearsEl.value = String(prefs?.years || 80);
+    if (prefs?.unit) this.lifeGridUnit = prefs.unit;
+    this.syncLifeGridUnitTabs();
+  }
+
+  private syncLifeGridUnitTabs(): void {
+    this.root.querySelectorAll<HTMLButtonElement>('[data-lg-unit]').forEach((btn) => {
+      const on = btn.dataset.lgUnit === this.lifeGridUnit;
+      btn.classList.toggle('lifegrid-unit--active', on);
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    const daysHint = this.root.querySelector<HTMLElement>('#lifegrid-days-hint');
+    if (daysHint) daysHint.hidden = this.lifeGridUnit !== 'days';
+  }
+
+  private setLifeGridUnit(unit: LifeGridUnit, pushUrl = true): void {
+    if (this.lifeGridUnit === unit) return;
+    this.lifeGridUnit = unit;
+    this.lifeGridSelected = null;
+    const info = this.root.querySelector<HTMLElement>('#lifegrid-cell-info');
+    if (info) {
+      info.hidden = true;
+      info.classList.remove('lifegrid-cell-info--top');
+    }
+    this.syncLifeGridUnitTabs();
+    this.persistLifeGridPrefs();
+    this.drawLifeGrid();
+    if (pushUrl && this.lifeGridMode) this.writeAddressBar('push');
+    else if (this.lifeGridMode) this.writeAddressBar('replace');
+  }
+
+  private lifeGridUnitLabel(): string {
+    if (this.lifeGridUnit === 'months') return this.tx.lifeGridUnitMonths;
+    if (this.lifeGridUnit === 'days') return this.tx.lifeGridUnitDays;
+    return this.tx.lifeGridUnitWeeks;
+  }
+
+  private lifeGridCellLabelTpl(): string {
+    if (this.lifeGridUnit === 'months') return this.tx.lifeGridMonthOf;
+    if (this.lifeGridUnit === 'days') return this.tx.lifeGridDayOf;
+    return this.tx.lifeGridWeekOf;
+  }
+
+  private updateLifeGridSummary(): void {
+    const summary = this.root.querySelector('#lifegrid-summary');
+    if (!summary) return;
+    const birth = this.getLifeGridBirth();
+    if (!birth) {
+      summary.textContent = '';
+      return;
+    }
+    const years = this.getLifeGridYears();
+    const total = totalCells(this.lifeGridUnit, years);
+    const lived = Math.min(cellsLived(this.lifeGridUnit, birth), total);
+    const pct = total ? Math.min(100, Math.round((lived / total) * 100)) : 0;
+    const loc = this.lang === 'ru' ? 'ru-RU' : 'en-US';
+    summary.textContent = this.tx.lifeGridSummary
+      .replace('{lived}', lived.toLocaleString(loc))
+      .replace('{total}', total.toLocaleString(loc))
+      .replace('{unit}', this.lifeGridUnitLabel())
+      .replace('{pct}', String(pct));
+  }
+
+  private showLifeGridCell(index: number | null, preferTop = false): void {
+    const info = this.root.querySelector<HTMLElement>('#lifegrid-cell-info');
+    const label = this.root.querySelector('#lifegrid-cell-label');
+    const openEl = this.root.querySelector<HTMLAnchorElement>('#lifegrid-open');
+    if (!info || !label || !openEl) return;
+
+    // Повторный клик по той же клетке — скрыть плашку.
+    if (index != null && index === this.lifeGridSelected && !info.hidden) {
+      this.lifeGridSelected = null;
+      info.hidden = true;
+      info.classList.remove('lifegrid-cell-info--top');
+      this.drawLifeGrid();
+      return;
+    }
+
+    this.lifeGridSelected = index;
+    const birth = this.getLifeGridBirth();
+    if (index == null || !birth) {
+      info.hidden = true;
+      info.classList.remove('lifegrid-cell-info--top');
+      this.drawLifeGrid();
+      return;
+    }
+    const start = cellStartDate(this.lifeGridUnit, birth, index);
+    const loc = this.lang === 'ru' ? 'ru-RU' : 'en-US';
+    const dateStr = start.toLocaleDateString(loc, {
+      year: 'numeric',
+      month: 'long',
+      day: this.lifeGridUnit === 'months' ? undefined : 'numeric',
+    });
+    label.textContent = this.lifeGridCellLabelTpl().replace('{date}', dateStr);
+    const mark = this.lifeGridMarks.get(index);
+    const markEl = this.root.querySelector('#lifegrid-cell-mark');
+    if (markEl) {
+      if (mark) {
+        const tpl = mark.kind === 'decade' ? this.tx.lifeGridMarkDecade : this.tx.lifeGridMarkBirthday;
+        markEl.textContent = tpl.replace('{age}', String(mark.age));
+        (markEl as HTMLElement).hidden = false;
+      } else {
+        markEl.textContent = '';
+        (markEl as HTMLElement).hidden = true;
+      }
+    }
+    openEl.href = `${langBasePath(this.lang)}?wm=4&fid=4&t=${start.getTime()}`;
+    info.classList.toggle('lifegrid-cell-info--top', preferTop);
+    info.hidden = false;
+    this.drawLifeGrid();
+  }
+
+  private setLifeGridFullscreen(on: boolean): void {
+    this.lifeGridFullscreen = on;
+    document.body.classList.toggle('lifegrid-fullscreen', on);
+    const exitBtn = this.root.querySelector<HTMLButtonElement>('#lifegrid-fs-exit');
+    if (exitBtn) exitBtn.hidden = !on;
+    const enterBtn = this.root.querySelector<HTMLButtonElement>('#lifegrid-fs-enter');
+    if (enterBtn) enterBtn.hidden = on;
+    if (!on && document.fullscreenElement) {
+      void document.exitFullscreen().catch(() => undefined);
+    }
+    requestAnimationFrame(() => this.drawLifeGrid());
+  }
+
+  private drawLifeGrid(): void {
+    const canvas = this.root.querySelector<HTMLCanvasElement>('#lifegrid-canvas');
+    const wrap = this.root.querySelector<HTMLElement>('.lifegrid-canvas-wrap');
+    if (!canvas || !wrap || !this.lifeGridMode) return;
+
+    const birth = this.getLifeGridBirth();
+    const years = this.getLifeGridYears();
+    const rows = Math.max(1, Math.floor(years));
+    const cols = colsForUnit(this.lifeGridUnit);
+    const total = totalCells(this.lifeGridUnit, years);
+    const lived = birth ? Math.min(cellsLived(this.lifeGridUnit, birth), total) : 0;
+    this.lifeGridCols = cols;
+    this.lifeGridRows = rows;
+
+    const fs = this.lifeGridFullscreen;
+    const cssW = Math.max(fs ? window.innerWidth : wrap.clientWidth, 1);
+    const cssH = fs ? Math.max(window.innerHeight, 1) : 0;
+    // В режиме дней клетки мелкие — гэп только если хватает места.
+    const gap =
+      fs || this.lifeGridUnit === 'days'
+        ? 0
+        : cssW < 400
+          ? 1
+          : 2;
+
+    let cellW: number;
+    let cellH: number;
+    let width: number;
+    let height: number;
+
+    if (fs) {
+      cellW = cssW / cols;
+      cellH = cssH / rows;
+      width = cssW;
+      height = cssH;
+    } else {
+      cellW = Math.max(this.lifeGridUnit === 'days' ? 1 : 2, (cssW - gap * (cols - 1)) / cols);
+      cellH = cellW;
+      width = cssW;
+      height = rows * cellH + (rows - 1) * gap;
+    }
+
+    this.lifeGridCellW = cellW;
+    this.lifeGridCellH = cellH;
+    this.lifeGridGap = gap;
+
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.floor(width * dpr);
+    canvas.height = Math.floor(height * dpr);
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, width, height);
+
+    const isDark = document.documentElement.dataset.theme === 'dark';
+    const livedFill = isDark ? '#6a9fff' : '#2a5db0';
+    const futureStroke = isDark ? '#444' : '#ccc';
+    const futureFill = isDark ? '#1a1a22' : '#f0f0f0';
+    const currentFill = isDark ? '#ffcc66' : '#e6a817';
+    const selectedStroke = isDark ? '#fff' : '#101010';
+    const birthdayDot = isDark ? '#ffd666' : '#d48806';
+    const decadeDot = isDark ? '#ff8fab' : '#c41e5c';
+    const drawStroke = !fs && this.lifeGridUnit !== 'days' && cellW >= 3 && cellH >= 3;
+    this.lifeGridMarks = birth ? lifeMilestones(this.lifeGridUnit, birth, years) : new Map();
+
+    for (let i = 0; i < total; i++) {
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      const x = col * (cellW + gap);
+      const y = row * (cellH + gap);
+      const w = col === cols - 1 ? Math.max(0, width - x) : cellW;
+      const h = row === rows - 1 ? Math.max(0, height - y) : cellH;
+      if (i < lived) {
+        ctx.fillStyle = livedFill;
+        ctx.fillRect(x, y, w, h);
+      } else if (i === lived && birth) {
+        ctx.fillStyle = currentFill;
+        ctx.fillRect(x, y, w, h);
+      } else {
+        ctx.fillStyle = futureFill;
+        ctx.fillRect(x, y, w, h);
+        if (drawStroke) {
+          ctx.strokeStyle = futureStroke;
+          ctx.lineWidth = 1;
+          ctx.strokeRect(x + 0.5, y + 0.5, Math.max(0, w - 1), Math.max(0, h - 1));
+        }
+      }
+      const mark = this.lifeGridMarks.get(i);
+      if (mark) {
+        const minSide = Math.min(w, h);
+        const showDot = mark.kind === 'decade' ? minSide >= 2 : minSide >= 3.5;
+        if (showDot) {
+          const r = Math.max(1, minSide * (mark.kind === 'decade' ? 0.28 : 0.17));
+          ctx.beginPath();
+          ctx.arc(x + w * 0.5, y + h * 0.5, r, 0, Math.PI * 2);
+          ctx.fillStyle = mark.kind === 'decade' ? decadeDot : birthdayDot;
+          ctx.fill();
+        }
+      }
+      if (this.lifeGridSelected === i) {
+        ctx.strokeStyle = selectedStroke;
+        ctx.lineWidth = Math.max(1, Math.floor(Math.min(cellW, cellH) / 4));
+        ctx.strokeRect(x + 0.5, y + 0.5, Math.max(0, w - 1), Math.max(0, h - 1));
+      }
+    }
+    this.updateLifeGridSummary();
+  }
+
+  private onLifeGridCanvasClick(e: MouseEvent): void {
+    const canvas = e.currentTarget as HTMLCanvasElement;
+    const rect = canvas.getBoundingClientRect();
+    const years = this.getLifeGridYears();
+    const cols = this.lifeGridCols;
+    const rows = this.lifeGridRows;
+    const logicalW = this.lifeGridCellW * cols + this.lifeGridGap * Math.max(0, cols - 1);
+    const logicalH = this.lifeGridCellH * rows + this.lifeGridGap * Math.max(0, rows - 1);
+    const x = ((e.clientX - rect.left) / Math.max(rect.width, 1)) * logicalW;
+    const y = ((e.clientY - rect.top) / Math.max(rect.height, 1)) * logicalH;
+    const index = cellFromPoint(
+      x,
+      y,
+      this.lifeGridCellW,
+      this.lifeGridCellH,
+      this.lifeGridGap,
+      cols,
+      rows,
+    );
+    // Если клетка в нижней части экрана — плашку сверху, чтобы не перекрывала выбор.
+    const preferTop = e.clientY > window.innerHeight * 0.55;
+    this.showLifeGridCell(index, preferTop);
+  }
+
+  private updateNavMenuLabel(): void {
+    const label = this.root.querySelector('#nav-menu-label');
+    const nav = this.root.querySelector('#main-nav');
+    const toggle = this.root.querySelector('#nav-menu-toggle');
+    const compact = !!nav?.classList.contains('nav--compact');
+    const icon = !!nav?.classList.contains('nav--icon');
+    if (label) label.textContent = compact && !icon ? this.activeNavLabel() : this.tx.navMenu;
+    if (toggle) {
+      const aria = !compact || icon ? this.tx.navMenu : this.activeNavLabel();
+      toggle.setAttribute('aria-label', aria);
+    }
+  }
+
+  private setNavOpen(open: boolean): void {
+    const nav = this.root.querySelector('#main-nav');
+    const toggle = this.root.querySelector('#nav-menu-toggle');
+    if (nav) nav.classList.toggle('nav--open', open);
+    if (toggle) toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+
+  /** Переносит основные вкладки в выпадающее меню или обратно в ряд. */
+  private placeNavPrimary(compact: boolean): void {
+    const primary = this.root.querySelector('#nav-primary');
+    const items = this.root.querySelector('#nav-items');
+    const events = this.root.querySelector('#nav-events');
+    const neu = this.root.querySelector('#nav-new');
+    if (!primary || !items || !events || !neu) return;
+    if (compact) {
+      items.prepend(neu);
+      items.prepend(events);
+    } else {
+      primary.append(events);
+      primary.append(neu);
+    }
+  }
+
+  /** Ширина flex-ряда со стилями `.nav a` (клон обязан быть внутри `.nav`). */
+  private measureFlexRowWidth(row: HTMLElement): number {
+    const wrap = document.createElement('div');
+    wrap.className = 'nav';
+    wrap.setAttribute('aria-hidden', 'true');
+    wrap.style.cssText =
+      'position:absolute;left:-99999px;top:0;display:flex;visibility:hidden;pointer-events:none;';
+    const probe = row.cloneNode(true) as HTMLElement;
+    probe.className = row.className || 'nav-primary';
+    probe.style.cssText = 'display:flex;flex-wrap:nowrap;gap:0.75rem;width:max-content;';
+    wrap.appendChild(probe);
+    document.body.appendChild(wrap);
+    const width = Math.ceil(probe.getBoundingClientRect().width);
+    wrap.remove();
+    return width;
+  }
+
+  private syncNavCompact(): void {
+    const header = this.root.querySelector<HTMLElement>('.section-header');
+    const nav = this.root.querySelector<HTMLElement>('#main-nav');
+    const primary = this.root.querySelector<HTMLElement>('#nav-primary');
+    const toggle = this.root.querySelector<HTMLButtonElement>('#nav-menu-toggle');
+    const logo = this.root.querySelector<HTMLElement>('.logo-link');
+    if (!header || !nav || !primary || !toggle || !logo) return;
+
+    const styles = getComputedStyle(header);
+    const headerGap = parseFloat(styles.columnGap || styles.gap) || 0;
+    const navGap = parseFloat(getComputedStyle(nav).columnGap || getComputedStyle(nav).gap) || 12;
+    const logoW = Math.ceil(logo.getBoundingClientRect().width);
+    const safety = 12;
+    const available = Math.floor(header.clientWidth - logoW - headerGap - safety);
+
+    // Для замера ряда вкладок временно возвращаем их на место.
+    const wasCompact = nav.classList.contains('nav--compact');
+    this.setNavOpen(false);
+    this.placeNavPrimary(false);
+    nav.classList.remove('nav--compact', 'nav--icon');
+    toggle.hidden = false;
+
+    const primaryW = this.measureFlexRowWidth(primary);
+    const burgerW = Math.ceil(toggle.getBoundingClientRect().width) || 40;
+    const neededWide = primaryW + navGap + burgerW;
+    let compact = neededWide > available;
+
+    if (!compact && !wasCompact) {
+      const headerRight = header.getBoundingClientRect().right;
+      const navRight = nav.getBoundingClientRect().right;
+      compact = navRight > headerRight + 1;
+    }
+
+    if (compact) {
+      nav.classList.add('nav--compact');
+      nav.classList.remove('nav--icon');
+      this.placeNavPrimary(true);
+      this.updateNavMenuLabel();
+      const toggleW = Math.ceil(toggle.getBoundingClientRect().width);
+      if (toggleW > available) {
+        nav.classList.add('nav--icon');
+        toggle.setAttribute('aria-label', this.tx.navMenu);
+      }
+    } else {
+      this.placeNavPrimary(false);
+      nav.classList.remove('nav--compact', 'nav--icon');
+      this.updateNavMenuLabel();
+    }
+  }
+
+  private scheduleNavCompact(): void {
+    clearTimeout(this.navLayoutTimer);
+    this.navLayoutTimer = window.setTimeout(() => {
+      requestAnimationFrame(() => this.syncNavCompact());
+    }, 0);
+  }
+
+  private bindNavMenu(): void {
+    const toggle = this.root.querySelector('#nav-menu-toggle');
+    const nav = this.root.querySelector('#main-nav');
+    const header = this.root.querySelector('.section-header');
+    toggle?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.setNavOpen(!nav?.classList.contains('nav--open'));
+    });
+    this.root.querySelector('#nav-items')?.addEventListener('click', () => {
+      this.setNavOpen(false);
+    });
+    document.addEventListener('click', (e) => {
+      if (!nav?.classList.contains('nav--open')) return;
+      if (nav.contains(e.target as Node)) return;
+      this.setNavOpen(false);
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') this.setNavOpen(false);
+    });
+    if (typeof ResizeObserver !== 'undefined' && header) {
+      this.navResizeObserver = new ResizeObserver(() => this.scheduleNavCompact());
+      this.navResizeObserver.observe(header);
+    }
+    window.addEventListener('resize', () => this.scheduleNavCompact());
+    requestAnimationFrame(() => this.syncNavCompact());
   }
 
   private appShareUrl(wm: ViewMode = 4): string {
@@ -880,14 +1414,162 @@ export class App {
     this.syncAddressBar();
   }
 
-  /** Адресная строка всегда отражает текущее состояние счётчика (метрику, дату, тексты). */
+  /** Адресная строка: живые правки — replace; смена экрана — push (см. navigateTo). */
   private syncAddressBar(): void {
-    if (location.pathname !== langBasePath(this.lang)) return;
-    const q = this.appShareUrl(this.wm).split('?')[1] || '';
-    const next = location.pathname + (q ? '?' + q : '');
-    if (location.pathname + location.search !== next) {
-      history.replaceState(null, '', next);
+    this.writeAddressBar('replace');
+  }
+
+  private currentView(): AppView {
+    if (this.lifeGridMode) return 'lifegrid';
+    if (this.betweenMode) return 'between';
+    if (this.wm === 1) return 'events';
+    if (this.wm === 4) return 'counter';
+    return 'new';
+  }
+
+  private buildViewUrl(view: AppView): string {
+    const base = langBasePath(this.lang);
+    if (view === 'lifegrid') {
+      const q = new URLSearchParams();
+      q.set('view', 'lifegrid');
+      if (this.lifeGridUnit !== 'weeks') q.set('unit', this.lifeGridUnit);
+      return `${base}?${q.toString()}`;
     }
+    if (view === 'between') return `${base}?view=between`;
+    if (view === 'events') {
+      const q = new URLSearchParams();
+      q.set('wm', '1');
+      if (this.eventWid > 0) q.set('wid', String(this.eventWid));
+      return `${base}?${q.toString()}`;
+    }
+    const wm = view === 'counter' ? 4 : 3;
+    const q = this.appShareUrl(wm).split('?')[1] || '';
+    return base + (q ? `?${q}` : '');
+  }
+
+  private writeAddressBar(mode: 'replace' | 'push'): void {
+    if (location.pathname !== langBasePath(this.lang)) return;
+    const next = this.buildViewUrl(this.currentView());
+    if (location.pathname + location.search === next) return;
+    if (mode === 'push') history.pushState({ mc: 1 }, '', next);
+    else history.replaceState({ mc: 1 }, '', next);
+  }
+
+  private restoreToolView(view: 'lifegrid' | 'between'): void {
+    this.lifeGridMode = view === 'lifegrid';
+    this.betweenMode = view === 'between';
+    if (view === 'lifegrid') {
+      this.lifeGridSelected = null;
+      this.syncLifeGridFormFromStore();
+      const params = new URLSearchParams(location.search);
+      if (params.has('unit')) {
+        this.lifeGridUnit = parseLifeGridUnit(params.get('unit'));
+      }
+      this.syncLifeGridUnitTabs();
+      this.applyViewMode();
+      const info = this.root.querySelector<HTMLElement>('#lifegrid-cell-info');
+      if (info) info.hidden = true;
+    } else {
+      this.applyViewMode();
+      this.updateBetweenResult();
+    }
+  }
+
+  /** Восстановить экран из текущего URL (кнопка «Назад» / «Вперёд»). */
+  private restoreFromLocation(): void {
+    const viewParam = new URLSearchParams(location.search).get('view');
+    if (viewParam === 'lifegrid' || viewParam === 'between') {
+      if (viewParam !== 'lifegrid' && this.lifeGridFullscreen) {
+        this.setLifeGridFullscreen(false);
+      }
+      this.restoreToolView(viewParam);
+      return;
+    }
+
+    if (this.lifeGridFullscreen) this.setLifeGridFullscreen(false);
+    this.lifeGridMode = false;
+    this.betweenMode = false;
+    const url = parseUrlState(location.search);
+    this.wm = url.wm;
+    if (url.fid) this.helper.format = url.fid;
+    if (url.rm) this.helper.restMode = 1;
+    else this.helper.restMode = 0;
+    if (url.t1) {
+      this.text1 = url.t1;
+      this.topTextEdited = true;
+    }
+    if (url.t2) this.text2 = url.t2;
+
+    if (url.lt && url.local) {
+      this.localDateActive = true;
+      this.localSpec = url.local;
+      this.shareMode = 'local';
+      const off = browserTzOffsetMin();
+      const born = resolveLocalBornTime(url.local, off);
+      this.helper.setBornTime(born, defaultTzPacked(), 1, 0, 0, this.tx);
+      this.syncFormFromLocalSpec(url.local);
+    } else if (url.t != null) {
+      this.localDateActive = false;
+      this.shareMode = 'instant';
+      const tz = url.tz ?? defaultTzPacked();
+      this.helper.setBornTime(url.t, tz, 1, 0, 0, this.tx);
+      this.syncTzFormFromHelper();
+      this.syncFormFromBorn(url.t);
+    }
+
+    this.applyViewMode();
+    if (this.wm === 1) {
+      if (url.wid) this.eventWid = url.wid;
+      if (!this.eventCatalog.length) void this.bootstrapEvents(url);
+      else {
+        this.applyEventByWid(this.eventWid);
+        this.refreshUI();
+      }
+    } else {
+      this.syncShareModeUI();
+      this.refreshUI();
+    }
+  }
+
+  private navigateTo(view: AppView): void {
+    const prev = this.currentView();
+    if (view !== 'lifegrid' && this.lifeGridFullscreen) {
+      this.setLifeGridFullscreen(false);
+    }
+    this.lifeGridMode = view === 'lifegrid';
+    this.betweenMode = view === 'between';
+    if (view === 'events') this.wm = 1;
+    else if (view === 'counter') this.wm = 4;
+    else if (view === 'new') this.wm = 3;
+
+    if (view === 'lifegrid') {
+      this.lifeGridSelected = null;
+      this.syncLifeGridFormFromStore();
+      this.syncLifeGridUnitTabs();
+      this.applyViewMode();
+      const info = this.root.querySelector<HTMLElement>('#lifegrid-cell-info');
+      if (info) info.hidden = true;
+    } else if (view === 'between') {
+      this.applyViewMode();
+      this.updateBetweenResult();
+    } else {
+      this.applyViewMode();
+    }
+
+    this.writeAddressBar(prev === view ? 'replace' : 'push');
+  }
+
+  private openCounterAt(t: number): void {
+    if (this.lifeGridFullscreen) this.setLifeGridFullscreen(false);
+    this.localDateActive = false;
+    this.shareMode = 'instant';
+    const tz = defaultTzPacked();
+    this.helper.setBornTime(t, tz, 1, 0, 0, this.tx);
+    this.helper.format = 4;
+    this.syncTzFormFromHelper();
+    this.syncFormFromBorn(t);
+    this.navigateTo('counter');
+    this.refreshUI();
   }
 
   private updateProgressBar(): void {
@@ -1030,6 +1712,7 @@ export class App {
 
   private onResize(): void {
     this.drawBg();
+    if (this.lifeGridMode) this.drawLifeGrid();
     const canvas = this.root.querySelector<HTMLCanvasElement>('#counter-canvas');
     if (!canvas || !this.counter) return;
     const wrap = this.root.querySelector<HTMLElement>('.counter-canvas-wrap');
@@ -1068,17 +1751,76 @@ export class App {
     this.root.querySelector('#theme-toggle')?.addEventListener('click', () => this.toggleTheme());
     this.root.querySelector('#nav-events')?.addEventListener('click', (e) => {
       e.preventDefault();
-      this.wm = 1;
-      this.applyViewMode();
+      this.navigateTo('events');
       if (!this.eventCatalog.length) void this.bootstrapEvents(parseUrlState(location.search));
       else this.refreshUI();
     });
     this.root.querySelector('#nav-new')?.addEventListener('click', (e) => {
       e.preventDefault();
-      this.wm = 3;
-      this.applyViewMode();
+      this.navigateTo('new');
       void this.bootstrapDefaultDate().then(() => this.refreshUI());
     });
+    this.root.querySelector('#nav-between')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      this.navigateTo('between');
+    });
+    this.root.querySelector('#nav-lifegrid')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      this.navigateTo('lifegrid');
+    });
+    const onLifeGridChange = () => {
+      this.persistLifeGridPrefs();
+      this.lifeGridSelected = null;
+      const info = this.root.querySelector<HTMLElement>('#lifegrid-cell-info');
+      if (info) info.hidden = true;
+      this.drawLifeGrid();
+    };
+    this.root.querySelector('#lg-birth')?.addEventListener('change', onLifeGridChange);
+    this.root.querySelector('#lg-birth')?.addEventListener('input', onLifeGridChange);
+    this.root.querySelector('#lg-years')?.addEventListener('change', onLifeGridChange);
+    this.root.querySelector('#lifegrid-canvas')?.addEventListener('click', (e) =>
+      this.onLifeGridCanvasClick(e as MouseEvent),
+    );
+    this.root.querySelector('#lifegrid-fs-enter')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      this.setLifeGridFullscreen(true);
+    });
+    this.root.querySelector('#lifegrid-fs-exit')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      this.setLifeGridFullscreen(false);
+    });
+    this.root.querySelectorAll('[data-lg-unit]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const unit = parseLifeGridUnit((btn as HTMLElement).dataset.lgUnit);
+        this.setLifeGridUnit(unit, true);
+      });
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && this.lifeGridFullscreen) {
+        e.preventDefault();
+        this.setLifeGridFullscreen(false);
+      }
+    });
+    this.root.querySelector('#lifegrid-open')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      const href = (e.currentTarget as HTMLAnchorElement).getAttribute('href');
+      if (!href || href === '#') return;
+      const t = parseUrlState(new URL(href, location.origin).search).t;
+      if (t != null) this.openCounterAt(t);
+    });
+    this.root.querySelector('#bd-from')?.addEventListener('change', () => this.updateBetweenResult());
+    this.root.querySelector('#bd-to')?.addEventListener('change', () => this.updateBetweenResult());
+    this.root.querySelector('#bd-from')?.addEventListener('input', () => this.updateBetweenResult());
+    this.root.querySelector('#bd-to')?.addEventListener('input', () => this.updateBetweenResult());
+    this.root.querySelector('#bd-open')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      const href = (e.currentTarget as HTMLAnchorElement).getAttribute('href');
+      if (!href || href === '#') return;
+      const t = parseUrlState(new URL(href, location.origin).search).t;
+      if (t != null) this.openCounterAt(t);
+    });
+    this.bindNavMenu();
     this.root.querySelector('#event-prev')?.addEventListener('click', (e) => {
       e.preventDefault();
       const len = this.eventCatalog.length;
@@ -1232,13 +1974,76 @@ export class App {
           <a href="${langBasePath(this.lang)}" class="logo-link">
             <img src="/cimg/001/i/logo.png" alt="${this.tx.logoAlt}" width="180" height="48">
           </a>
-          <nav class="nav">
-            <a href="#" id="nav-events">${this.tx.navEvents}</a>
-            <a href="#" id="nav-new">${this.tx.navNew}</a>
-            <a href="/${this.lang === 'ru' ? 'en' : 'ru'}/" class="lang-switch">${this.lang === 'ru' ? 'EN' : 'RU'}</a>
-            <button type="button" id="theme-toggle" class="btn-ghost">${this.tx.themeToggle}</button>
+          <nav class="nav" id="main-nav">
+            <div class="nav-primary" id="nav-primary">
+              <a href="#" id="nav-events">${this.tx.navEvents}</a>
+              <a href="#" id="nav-new">${this.tx.navNew}</a>
+            </div>
+            <button type="button" id="nav-menu-toggle" class="nav-menu-toggle" aria-expanded="false" aria-controls="nav-items" aria-label="${this.tx.navMenu}">
+              <span class="nav-menu-burger" aria-hidden="true"><span></span><span></span><span></span></span>
+              <span id="nav-menu-label" class="nav-menu-label">${this.tx.navMenu}</span>
+              <span class="nav-menu-arrow" aria-hidden="true">▾</span>
+            </button>
+            <div class="nav-items" id="nav-items">
+              <a href="#" id="nav-between">${this.tx.navBetween}</a>
+              <a href="#" id="nav-lifegrid">${this.tx.navLifeGrid}</a>
+              <a href="/${this.lang === 'ru' ? 'en' : 'ru'}/" class="lang-switch" aria-label="${this.lang === 'ru' ? 'Switch to English' : 'Переключить на русский'}" title="${this.lang === 'ru' ? 'Switch to English' : 'Переключить на русский'}">${this.lang === 'ru' ? '🇷🇺' : '🇬🇧'}</a>
+              <button type="button" id="theme-toggle" class="btn-ghost" aria-label="${this.tx.themeToggle}" title="${this.tx.themeToggle}">🌓</button>
+            </div>
           </nav>
         </header>
+
+        <section class="section-between card" hidden>
+          <h2>${this.tx.navBetween}</h2>
+          <p class="hint">${this.tx.betweenHint}</p>
+          <div class="date-form between-form">
+            <label class="settings-field">${this.tx.betweenFrom}
+              <input type="date" id="bd-from" class="wide">
+            </label>
+            <label class="settings-field">${this.tx.betweenTo}
+              <input type="date" id="bd-to" class="wide">
+            </label>
+          </div>
+          <div id="bd-result" class="share-preview between-result" hidden></div>
+          <p class="between-open-wrap">
+            <a href="#" id="bd-open" class="popular-link" hidden>${this.tx.betweenOpenCounter}</a>
+          </p>
+        </section>
+
+        <section class="section-lifegrid card" hidden>
+          <div class="lifegrid-heading">
+            <h2>${this.tx.navLifeGrid}</h2>
+            <button type="button" id="lifegrid-fs-enter" class="btn-ghost">${this.tx.lifeGridFullscreen}</button>
+          </div>
+          <div class="lifegrid-units" role="group" aria-label="${this.tx.navLifeGrid}">
+            <button type="button" class="lifegrid-unit" data-lg-unit="weeks" aria-pressed="true">${this.tx.lifeGridTabWeeks}</button>
+            <button type="button" class="lifegrid-unit" data-lg-unit="months" aria-pressed="false">${this.tx.lifeGridTabMonths}</button>
+            <button type="button" class="lifegrid-unit" data-lg-unit="days" aria-pressed="false">${this.tx.lifeGridTabDays}</button>
+          </div>
+          <p class="hint">${this.tx.lifeGridHint}</p>
+          <p class="hint lifegrid-marks-hint">${this.tx.lifeGridMarksHint}</p>
+          <p id="lifegrid-days-hint" class="hint lifegrid-days-hint" hidden>${this.tx.lifeGridDaysHint}</p>
+          <div class="date-form lifegrid-form">
+            <label class="settings-field">${this.tx.lifeGridBirth}
+              <input type="date" id="lg-birth" class="wide">
+            </label>
+            <label class="settings-field">${this.tx.lifeGridYears}
+              <select id="lg-years" class="wide">
+                ${ALLOWED_YEARS.map((y) => `<option value="${y}">${y} ${this.tx.lifeGridYearsUnit}</option>`).join('')}
+              </select>
+            </label>
+          </div>
+          <p id="lifegrid-summary" class="lifegrid-summary"></p>
+          <div class="lifegrid-canvas-wrap">
+            <canvas id="lifegrid-canvas" aria-label="${this.tx.navLifeGrid}"></canvas>
+            <button type="button" id="lifegrid-fs-exit" class="lifegrid-fs-exit btn-ghost" hidden>${this.tx.lifeGridFullscreenExit}</button>
+            <div id="lifegrid-cell-info" class="lifegrid-cell-info" hidden>
+              <p id="lifegrid-cell-label"></p>
+              <p id="lifegrid-cell-mark" class="lifegrid-cell-mark" hidden></p>
+              <p><a href="#" id="lifegrid-open" class="popular-link">${this.tx.lifeGridOpenCounter}</a></p>
+            </div>
+          </div>
+        </section>
 
         <section class="section-landing-intro card" hidden>
           <h1 id="landing-h1"></h1>
@@ -1407,6 +2212,8 @@ export class App {
   }
 
   destroy(): void {
+    this.navResizeObserver?.disconnect();
+    this.navResizeObserver = null;
     cancelAnimationFrame(this.raf);
   }
 }

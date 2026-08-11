@@ -1,4 +1,5 @@
 import './styles/main.css';
+import { daysBetween, monthsApprox, parseYmd, ymdLocal } from './lib/days-between';
 
 function detectLang(): 'ru' | 'en' {
   return /\/until\//.test(location.pathname) ? 'en' : 'ru';
@@ -9,7 +10,6 @@ const TX = {
     title: 'Калькулятор дней между датами',
     from: 'С даты:',
     to: 'По дату:',
-    calc: 'Посчитать',
     resultDays: 'Между датами:',
     days: 'дней',
     weeks: 'недель',
@@ -23,7 +23,6 @@ const TX = {
     title: 'Days between dates calculator',
     from: 'From:',
     to: 'To:',
-    calc: 'Calculate',
     resultDays: 'Between the dates:',
     days: 'days',
     weeks: 'weeks',
@@ -35,32 +34,8 @@ const TX = {
   },
 } as const;
 
-function parseYmd(s: string): Date | null {
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
-  if (!m) return null;
-  const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 0, 0, 0, 0);
-  if (Number.isNaN(d.getTime())) return null;
-  return d;
-}
-
-function daysBetween(a: Date, b: Date): number {
-  const ms = b.getTime() - a.getTime();
-  return Math.round(ms / 86400000);
-}
-
-function monthsApprox(a: Date, b: Date): number {
-  return (b.getFullYear() - a.getFullYear()) * 12 + (b.getMonth() - a.getMonth());
-}
-
-function fmtNum(n: number): string {
-  return Math.abs(n).toLocaleString('ru-RU');
-}
-
-function ymdLocal(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
+function fmtNum(n: number, lang: 'ru' | 'en'): string {
+  return Math.abs(n).toLocaleString(lang === 'ru' ? 'ru-RU' : 'en-US');
 }
 
 function main(): void {
@@ -105,7 +80,6 @@ function main(): void {
           <label class="settings-field">${tx.to}
             <input type="date" id="bd-to" class="wide" value="${ymdLocal(today)}">
           </label>
-          <button type="button" id="bd-calc" class="btn-ghost">${tx.calc}</button>
         </div>
         <div id="bd-result" class="share-preview" style="margin-top:1rem" hidden></div>
         <p style="margin-top:1rem">
@@ -137,7 +111,7 @@ function main(): void {
     resultEl.hidden = false;
     resultEl.innerHTML = `
       <strong>${tx.resultDays}</strong>
-      ${sign}${fmtNum(abs)} ${tx.days}
+      ${sign}${fmtNum(abs, lang)} ${tx.days}
       ${weeks ? `· ${sign}${weeks} ${tx.weeks}${remDays ? ` ${tx.and} ${remDays} ${tx.days}` : ''}` : ''}
       ${months ? `· ${sign}${months} ${tx.monthsApprox}` : ''}
     `;
@@ -147,9 +121,10 @@ function main(): void {
     openEl.hidden = false;
   };
 
-  root.querySelector('#bd-calc')?.addEventListener('click', update);
   fromEl.addEventListener('change', update);
   toEl.addEventListener('change', update);
+  fromEl.addEventListener('input', update);
+  toEl.addEventListener('input', update);
   update();
 }
 

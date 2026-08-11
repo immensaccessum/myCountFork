@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitest/config';
+import { resolve } from 'node:path';
 import { buildOgHtml } from './src/lib/og-html';
 import { parseOgQuery } from './src/lib/url-state';
 import { handleApiRequest } from './server/handlers.mjs';
@@ -83,7 +84,15 @@ export default defineConfig({
   server: {
     port: 5173,
   },
-  build: { outDir: 'dist' },
+  build: {
+    outDir: 'dist',
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'index.html'),
+        between: resolve(__dirname, 'between-dates.html'),
+      },
+    },
+  },
   test: {
     environment: 'node',
     include: ['src/**/*.test.ts', 'server/**/*.test.mjs'],

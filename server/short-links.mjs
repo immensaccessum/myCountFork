@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 import { buildOgHtml, requestOrigin } from './og-html.mjs';
 import { renderOgCard } from './og-image.mjs';
 import { allowRequest, clientIp, sendTooMany } from './rate-limit.mjs';
-import { countdownLineFromCounterPath, detectLangFromPath } from './countdown-line.mjs';
+import { countdownLineFromCounterPath, countdownLineFromCounterPathAsync, detectLangFromPath } from './countdown-line.mjs';
 
 const DEFAULT_PATH = join(dirname(fileURLToPath(import.meta.url)), '.data', 'short-links.json');
 
@@ -146,7 +146,7 @@ export async function handleShortRoutes(req, res, store = defaultStore) {
     let png = null;
     try {
       const lang = detectLangFromPath(link.to);
-      const countdown = countdownLineFromCounterPath(link.to, lang);
+      const countdown = await countdownLineFromCounterPathAsync(link.to, lang);
       png = await renderOgCard(link.title, link.desc, countdown);
     } catch {
       png = null;

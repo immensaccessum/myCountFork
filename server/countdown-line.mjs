@@ -1,6 +1,8 @@
 /**
  * Parse counter URL params and compute a human-readable remaining/elapsed days line.
  */
+import { buildEventsCatalog } from './events-catalog.mjs';
+
 const MSK_TZ_SEC = 3 * 3600;
 
 function pluralRu(n, one, few, many) {
@@ -41,10 +43,10 @@ function parseLocalSpec(params) {
 }
 
 function localWallToUtcMs(spec) {
-  const now = new Date();
-  let year = spec.year || now.getFullYear();
+  const now = Date.now();
+  let year = spec.year || new Date(now).getFullYear();
   const d = new Date(year, spec.month - 1, spec.day, spec.hour, spec.min, spec.sec, 0);
-  if (spec.annual && d.getTime() <= Date.now()) {
+  if (spec.annual && d.getTime() <= now) {
     d.setFullYear(d.getFullYear() + 1);
   }
   return d.getTime();
@@ -57,21 +59,48 @@ function diffDays(targetMs, nowMs) {
   return { days, future };
 }
 
-export function countdownLineFromCounterPath(pathWithQuery, lang = 'ru', now = Date.now()) {
+function parseParams(pathWithQuery) {
   const q = pathWithQuery.includes('?') ? pathWithQuery.slice(pathWithQuery.indexOf('?')) : '';
-  const params = new URLSearchParams(q);
-  const local = parseLocalSpec(params);
-  let targetMs;
-  if (local) {
-    targetMs = localWallToUtcMs(local);
-  } else {
-    const t = params.get('t');
-    if (!t) return null;
-    targetMs = parseInt(t, 10);
+  return new URLSearchParams(q);
+}
+
+function targetFromParams(params) {
+  // Prefer instant t= over lt= — lt may be stale form data when eid is set.
+  const t = params.get('t');
+  if (t) {
+    const ms = parseInt(t, 10);
+    if (Number.isFinite(ms)) return ms;
   }
+  const local = parseLocalSpec(params);
+  if (local) return localWallToUtcMs(local);
+  return null;
+}
+
+export function countdownLineFromCounterPath(pathWithQuery, lang = 'ru', now = Date.now()) {
+  const targetMs = targetFromParams(parseParams(pathWithQuery));
   if (!Number.isFinite(targetMs)) return null;
   const { days, future } = diffDays(targetMs, now);
   return lang === 'en' ? daysLineEn(days, future) : daysLineRu(days, future);
+}
+
+/** Resolve eid via events catalog — fixes legacy links with wrong lt= params. */
+export async function countdownLineFromCounterPathAsync(pathWithQuery, lang = 'ru', now = Date.now()) {
+  const params = parseParams(pathWithQuery);
+  const eid = params.get('eid');
+  if (eid) {
+    const cc = (params.get('cc') || (lang === 'en' ? 'US' : 'RU')).toUpperCase();
+    try {
+      const catalog = await buildEventsCatalog(cc);
+      const ev = catalog.find((e) => e.id === eid);
+      if (ev?.t) {
+        const { days, future } = diffDays(ev.t, now);
+        return lang === 'en' ? daysLineEn(days, future) : daysLineRu(days, future);
+      }
+    } catch {
+      /* fall through */
+    }
+  }
+  return countdownLineFromCounterPath(pathWithQuery, lang, now);
 }
 
 export function detectLangFromPath(path) {

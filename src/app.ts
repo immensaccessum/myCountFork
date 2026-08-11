@@ -344,7 +344,11 @@ export class App {
     this.eventWid = wid;
     this.currentEventEid = ev.id;
     this.text2 = '';
+    this.shareMode = 'instant';
+    this.localDateActive = false;
+    this.localSpec = null;
     this.helper.setBornTime(ev.t, ev.tz, 1, 0, 0, this.tx);
+    this.syncFormFromBorn(ev.t);
 
     const titleEl = this.root.querySelector('#event-title');
     if (titleEl) titleEl.textContent = ev.name[this.lang];
@@ -676,6 +680,8 @@ export class App {
   private appShareUrl(wm: ViewMode = 4): string {
     const t1 = (this.root.querySelector<HTMLInputElement>('#inp-text1')?.value || this.text1).trim();
     const t2 = (this.root.querySelector<HTMLInputElement>('#inp-text2')?.value || this.text2).trim();
+    const fromCatalog = !!this.currentEventEid;
+    const shareMode = fromCatalog ? 'instant' : this.shareMode;
     return buildAppShareUrl({
       basePath: langBasePath(this.lang),
       bornTime: this.helper.bornTime,
@@ -686,8 +692,8 @@ export class App {
       eid: this.currentEventEid || undefined,
       wm,
       omitTz: this.isBrowserTimezone(),
-      shareMode: this.shareMode,
-      local: this.shareMode === 'local' ? this.readFormLocalSpec() : undefined,
+      shareMode,
+      local: shareMode === 'local' ? this.readFormLocalSpec() : undefined,
       theme: themeToParam(this.counterTheme),
     });
   }
@@ -698,12 +704,12 @@ export class App {
 
   private ogTitleDesc(): { title: string; desc: string } {
     const ev = findEventById(this.eventCatalog, this.currentEventEid);
-    const dateText = this.suggestedTopText();
 
     if (ev) {
-      return { title: `${ev.name[this.lang]} — ${dateText}`, desc: ev.desc[this.lang] || dateText };
+      return { title: ev.name[this.lang], desc: this.helper.buildDateText(this.tx) };
     }
 
+    const dateText = this.suggestedTopText();
     const custom = (this.root.querySelector<HTMLInputElement>('#inp-text1')?.value || this.text1)
       .trim()
       .slice(0, MAX_SHARE_TEXT);

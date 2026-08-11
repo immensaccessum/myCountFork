@@ -298,6 +298,7 @@ export class App {
       this.applyLandingIntro();
     }
     this.helper.setBornTime(ev.t, ev.tz, 1, 0, 0, this.tx);
+    this.syncTzFormFromHelper();
     this.syncFormFromBorn(ev.t);
     const custom1 = this.root.querySelector<HTMLInputElement>('#inp-text1');
     if (custom1 && !custom1.value.trim()) {
@@ -397,6 +398,7 @@ export class App {
     this.localDateActive = false;
     this.localSpec = null;
     this.helper.setBornTime(ev.t, ev.tz, 1, 0, 0, this.tx);
+    this.syncTzFormFromHelper();
     this.syncFormFromBorn(ev.t);
     this.renderEventsPanel(ev, wid);
   }
@@ -850,7 +852,16 @@ export class App {
 
     const tzHint = this.root.querySelector('#tz-local-hint');
     if (tzHint) {
-      tzHint.textContent = `${this.tx.tzLocalHint} ${formatUtcOffset(browserTzOffsetMin())}`;
+      const browserMin = browserTzOffsetMin();
+      if (this.localDateActive || (this.helper.tzen && !this.helper.tzunk && this.helper.tz === browserMin * 60)) {
+        tzHint.textContent = `${this.tx.tzLocalHint} ${formatUtcOffset(browserMin)}`;
+      } else if (this.helper.tzunk) {
+        tzHint.textContent = `${this.tx.tzLabel} ${this.tx.tzUnknown}`;
+      } else if (!this.helper.tzen) {
+        tzHint.textContent = `${this.tx.tzLabel} ${this.tx.tzNone}`;
+      } else {
+        tzHint.textContent = `${this.tx.tzLabel} ${formatUtcOffset(this.helper.tz / 60)}`;
+      }
     }
 
     const tzEl = this.root.querySelector('#tz-display');

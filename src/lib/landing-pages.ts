@@ -1,9 +1,13 @@
 export interface LandingPageDef {
   id: string;
+  kind?: string;
+  mode?: string;
+  rule?: string;
+  inCatalog?: boolean;
   slugRu: string;
   slugEn: string;
-  month: number;
-  day: number;
+  month?: number;
+  day?: number;
   year?: number;
   annual?: boolean;
   titleRu: string;
@@ -22,14 +26,26 @@ export interface LandingEvent {
   t: number;
   tz: number;
   source: 'landing';
+  kind?: string;
+  rule?: string;
   slug: { ru: string; en: string };
   name: { ru: string; en: string };
   desc: { ru: string; en: string };
 }
 
+export interface McPreset {
+  eventId?: string;
+  wm?: number;
+  h1?: string;
+  intro?: string;
+  kind?: string;
+  mode?: 'since' | 'until' | string;
+  rule?: string;
+}
+
 declare global {
   interface Window {
-    __MC_PRESET?: { eventId?: string; wm?: number; h1?: string; intro?: string };
+    __MC_PRESET?: McPreset;
   }
 }
 
@@ -43,24 +59,20 @@ export async function fetchLandingEvent(idOrSlug: string, lang: 'ru' | 'en'): Pr
   }
 }
 
-export async function fetchPopularLandings(lang: 'ru' | 'en'): Promise<{ slug: string; label: string; href: string }[]> {
+export async function fetchPopularLandings(
+  lang: 'ru' | 'en',
+): Promise<{ slug: string; label: string; href: string }[]> {
   try {
     const r = await fetch(`/api/landing-pages?lang=${lang}`);
     if (!r.ok) return [];
-    const pages = (await r.json()) as LandingPageDef[];
-    const key = lang === 'en' ? 'slugEn' : 'slugRu';
-    const prefix = lang === 'en' ? '/until/' : '/do/';
-    const order = lang === 'ru'
-      ? ['avgusta', 'sentyabrya', 'iyulya', 'leta', 'novogo-goda', 'oktyabrya', 'noyabrya', 'iyunya', 'dekabrya', '1-sentyabrya', 'kontsa-goda', '2027-goda']
-      : ['august', 'september', 'july', 'summer', 'new-year', 'october', 'november', 'june', 'december', 'september-1', 'end-of-year', 'year-2027'];
-    return order
-      .map((slug) => pages.find((p) => p[key] === slug))
-      .filter((p): p is LandingPageDef => !!p)
-      .map((p) => ({
-        slug: p[key],
-        label: lang === 'ru' ? p.h1Ru.replace('?', '') : p.h1En.replace('?', ''),
-        href: `${prefix}${p[key]}/`,
-      }));
+    const data = (await r.json()) as
+      | LandingPageDef[]
+      | { pages: LandingPageDef[]; popular: { slug: string; label: string; href: string }[] };
+    if (Array.isArray(data)) {
+      // legacy shape
+      return [];
+    }
+    return data.popular || [];
   } catch {
     return [];
   }

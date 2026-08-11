@@ -1,6 +1,6 @@
 import { getCountries, getHolidays } from './nager-cache.mjs';
 import { buildEventsCatalog } from './events-catalog.mjs';
-import { findLandingById, findLandingBySlug, getLandingPageDefs, landingEventFromDef } from './landing-pages.mjs';
+import { findLandingById, findLandingBySlug, getLandingPageDefs, landingEventFromDef, popularLandingSlugs } from './landing-pages.mjs';
 
 function sendJson(res, status, data) {
   res.statusCode = status;
@@ -46,7 +46,8 @@ export async function handleApiRequest(req, res, next) {
   }
 
   if (path === '/api/landing-pages') {
-    sendJson(res, 200, getLandingPageDefs());
+    const lang = (url.split('?')[1] && new URLSearchParams(url.split('?')[1]).get('lang')) || 'ru';
+    sendJson(res, 200, { pages: getLandingPageDefs(), popular: popularLandingSlugs(lang) });
     return;
   }
 
@@ -59,7 +60,12 @@ export async function handleApiRequest(req, res, next) {
       sendJson(res, 404, { error: 'not found' });
       return;
     }
-    sendJson(res, 200, landingEventFromDef(def));
+    const ev = landingEventFromDef(def);
+    if (!ev) {
+      sendJson(res, 404, { error: 'tool page has no fixed event' });
+      return;
+    }
+    sendJson(res, 200, ev);
     return;
   }
 

@@ -3,13 +3,14 @@
  * Post-build SEO: writes dist/ru/index.html, dist/en/index.html,
  * landing pages dist/do/<slug>/ and dist/until/<slug>/, plus sitemap.xml.
  */
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getLandingPageDefs } from '../server/landing-pages.mjs';
 
 const BASE_URL = 'https://app4.letovrf.ru';
-const DIST = join(dirname(fileURLToPath(import.meta.url)), '..', 'dist');
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+const DIST = join(ROOT, 'dist');
 
 const PAGES = {
   ru: {
@@ -64,7 +65,20 @@ function metaBlock(lang, { title, desc, url, altRu, altEn }) {
 function landingPresetScript(def, lang) {
   const h1 = lang === 'ru' ? def.h1Ru : def.h1En;
   const intro = lang === 'ru' ? def.bodyRu : def.bodyEn;
-  return `<script>window.__MC_PRESET={eventId:${JSON.stringify(def.id)},wm:4,h1:${JSON.stringify(h1)},intro:${JSON.stringify(intro)}};</script>`;
+  /** @type {Record<string, unknown>} */
+  const preset = {
+    wm: def.kind === 'tool' ? 3 : 4,
+    h1,
+    intro,
+    kind: def.kind || 'date',
+  };
+  if (def.kind === 'tool') {
+    if (def.mode) preset.mode = def.mode;
+  } else {
+    preset.eventId = def.id;
+    if (def.rule) preset.rule = def.rule;
+  }
+  return `<script>window.__MC_PRESET=${JSON.stringify(preset)};</script>`;
 }
 
 /** Crawlers without JS still get an H1; visually hidden, no layout shift. */
@@ -110,6 +124,59 @@ for (const def of getLandingPageDefs()) {
     writeFileSync(join(outDir, 'index.html'), html);
     sitemapUrls.push({ loc: url, altRu, altEn });
   }
+}
+
+/* Between-dates calculator (standalone Vite entry → dist/between-dates.html) */
+const betweenSrc = join(DIST, 'between-dates.html');
+if (existsSync(betweenSrc)) {
+  const betweenPairs = [
+    {
+      lang: 'ru',
+      prefix: 'do',
+      slug: 'dnej-mezhdu-datami',
+      title: 'Калькулятор дней между датами — посчитать онлайн',
+      desc: 'Сколько дней между двумя датами: онлайн-калькулятор. Узнайте разницу в днях, неделях и месяцах и создайте счётчик до выбранной даты.',
+      h1: 'Сколько дней между датами?',
+      body: 'Укажите две даты — калькулятор покажет, сколько дней между ними. Можно открыть счётчик до второй даты.',
+    },
+    {
+      lang: 'en',
+      prefix: 'until',
+      slug: 'days-between-dates',
+      title: 'Days between dates calculator — online',
+      desc: 'How many days between two dates: online calculator. See the difference in days, weeks and months, then open a countdown to the second date.',
+      h1: 'How many days between two dates?',
+      body: 'Pick two dates — the calculator shows how many days are between them. You can open a countdown to the second date.',
+    },
+  ];
+  let betweenHtml = readFileSync(betweenSrc, 'utf8');
+  for (const p of betweenPairs) {
+    const url = `${BASE_URL}/${p.prefix}/${p.slug}/`;
+    const altRu = `${BASE_URL}/do/dnej-mezhdu-datami/`;
+    const altEn = `${BASE_URL}/until/days-between-dates/`;
+    let html = betweenHtml;
+    if (html.includes('<title>')) {
+      html = html.replace(/<title>[^<]*<\/title>/, metaBlock(p.lang, {
+        title: p.title,
+        desc: p.desc,
+        url,
+        altRu,
+        altEn,
+      }));
+    } else {
+      html = html.replace('</head>', `${metaBlock(p.lang, { title: p.title, desc: p.desc, url, altRu, altEn })}\n</head>`);
+    }
+    html = html.replace(/<html[^>]*>/, `<html lang="${p.lang}">`);
+    if (!html.includes('sr-only')) {
+      html = html.replace('<div id="between-app"></div>', `${landingSeoBlock(p.h1, p.body)}\n  <div id="between-app"></div>`);
+    }
+    const outDir = join(DIST, p.prefix, p.slug);
+    mkdirSync(outDir, { recursive: true });
+    writeFileSync(join(outDir, 'index.html'), html);
+    sitemapUrls.push({ loc: url, altRu, altEn });
+  }
+} else {
+  console.warn('between-dates.html not found in dist — skip between-dates SEO pages');
 }
 
 const now = new Date().toISOString().slice(0, 10);

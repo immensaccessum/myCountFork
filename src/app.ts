@@ -23,6 +23,7 @@ import {
   type ViewMode,
 } from './lib/url-state';
 import { formatLocalDateLabel, resolveLocalBornTime, type LocalDateSpec } from './lib/local-date';
+import { resolveDynamicRule } from './lib/dynamic-date';
 import { numToStr, tn } from './lib/utils';
 import type { LocaleStrings } from './i18n/types';
 import {
@@ -152,6 +153,17 @@ export class App {
     if (this.wm === 1) {
       this.applyViewMode();
       void this.bootstrapEvents(url);
+    } else if (preset?.kind === 'tool' && !url.t && !url.lt && !url.eid) {
+      this.applyViewMode();
+      void this.bootstrapToolLanding(preset.mode).then(() => {
+        this.syncShareModeUI();
+        this.refreshUI();
+      });
+    } else if (preset?.kind === 'dynamic' && preset.rule && preset.eventId && !url.t && !url.lt) {
+      this.applyViewMode();
+      this.applyDynamicLanding(preset.rule, preset.eventId);
+      this.syncShareModeUI();
+      this.refreshUI();
     } else {
       const eventId = url.eid || preset?.eventId;
       if (eventId) {
@@ -159,6 +171,8 @@ export class App {
         void this.applyLandingEvent(eventId).then(() => {
           if (url.lt && url.local) {
             this.syncFormFromLocalSpec(url.local);
+          } else if (preset?.kind === 'dynamic' && preset.rule) {
+            this.applyDynamicLanding(preset.rule, eventId);
           } else {
             this.syncTzFormFromHelper();
             this.syncFormFromBorn(this.helper.bornTime);
@@ -267,6 +281,10 @@ export class App {
       this.landingIntro = ev.desc[this.lang];
       this.applyLandingIntro();
     }
+    if (ev.kind === 'dynamic' && ev.rule) {
+      this.applyDynamicLanding(ev.rule, ev.id);
+      return;
+    }
     this.helper.ent = 4;
     this.helper.setBornTime(ev.t, ev.tz, 1, 0, 0, this.tx);
     this.syncTzFormFromHelper();
@@ -283,7 +301,49 @@ export class App {
     const section = this.root.querySelector('.section-landing-intro');
     if (h1) h1.textContent = this.landingH1;
     if (intro) intro.textContent = this.landingIntro;
-    if (section) (section as HTMLElement).hidden = !this.landingH1 || this.wm !== 4;
+    if (section) (section as HTMLElement).hidden = !this.landingH1;
+  }
+
+  /** Tool landings: open the editor with a sensible default date. */
+  private async bootstrapToolLanding(mode?: string): Promise<void> {
+    this.currentEventEid = '';
+    this.eventOffset = 0;
+    this.shareMode = 'instant';
+    this.localDateActive = false;
+    this.localSpec = null;
+    this.applyLandingIntro();
+
+    if (mode === 'since') {
+      const off = browserTzOffsetMin();
+      const now = new Date();
+      // Jan 1 of the current local year at 00:00 — counter shows «how much has passed».
+      const localMidnight = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0).getTime();
+      this.helper.ent = 4;
+      this.helper.setBornTime(localMidnight, off * 60, 1, 0, 0, this.tx);
+      this.helper.format = 4; // days
+      this.syncTzFormFromHelper();
+      this.syncFormFromBorn(localMidnight);
+      return;
+    }
+
+    await this.bootstrapDefaultDate();
+  }
+
+  /** Dynamic landings: recompute the rule in the visitor's timezone. */
+  private applyDynamicLanding(rule: string, eventId: string): void {
+    if (!rule) return;
+    const off = browserTzOffsetMin();
+    const t = resolveDynamicRule(rule, Date.now(), off);
+    this.eventOffset = 0;
+    this.currentEventEid = eventId;
+    this.shareMode = 'instant';
+    this.localDateActive = false;
+    this.localSpec = null;
+    this.helper.ent = 4;
+    this.helper.setBornTime(t, off * 60, 1, 0, 0, this.tx);
+    this.syncTzFormFromHelper();
+    this.syncFormFromBorn(t);
+    this.applyLandingIntro();
   }
 
   private async loadPopularLandings(): Promise<void> {
@@ -699,7 +759,7 @@ export class App {
     show('.section-life', this.wm === 3);
     show('.section-settings', this.wm !== 4);
     show('.section-header', true);
-    show('.section-intro', this.wm === 3);
+    show('.section-intro', this.wm === 3 && !this.landingH1);
     show('.section-footer', this.wm !== 4);
     this.root.querySelector('#nav-events')?.classList.toggle('nav-active', this.wm === 1);
     this.root.querySelector('#nav-new')?.classList.toggle('nav-active', this.wm === 3);

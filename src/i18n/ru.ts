@@ -35,5 +35,5 @@ export const ru: LocaleStrings = {
   ...(ruJson as Omit<LocaleStrings, keyof typeof engine>),
   ...engine,
   lang: 'ru',
-  footer: 'myCount Fork v1.0',
+  footer: 'myCount v0.4',
 } as LocaleStrings;

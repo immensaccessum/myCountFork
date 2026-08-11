@@ -1,11 +1,21 @@
-myCount Fork — Non-Commercial License (with owner commercial exception)
+myCount — Non-Commercial License (with owner commercial exception)
 
 Copyright (c) 2024-2026 Alexey (immensaccessum@gmail.com, GitHub: immensaccessum)
 
 All rights reserved.
 
+SCOPE
+
+This license applies to new application code in this repository:
+
+  src/, server/, scripts/, docs/, index.html, public/ (except third-party
+  components listed in NOTICE)
+
+The directory legacy/ is NOT covered by this license; it remains under MIT
+(see legacy/LICENSE).
+
 Permission is granted to any person to use, copy, modify, and distribute
-this software and its source code for NON-COMMERCIAL purposes only,
+the covered Software and its source code for NON-COMMERCIAL purposes only,
 subject to the following conditions:
 
 1. Commercial use is prohibited for everyone except the copyright holder
@@ -22,13 +32,14 @@ subject to the following conditions:
      the Owner’s written permission.
 
 3. The Owner retains the exclusive right to commercial use, monetization,
-   advertising, and commercial sublicensing of this Software and derivative
-   works.
+   advertising, and commercial sublicensing of the covered Software and
+   derivative works.
 
-4. Redistributions must retain this license and the copyright notice.
+4. Redistributions of covered code must retain this license, NOTICE, and
+   the copyright notice.
 
 5. Third-party components bundled in this repository may be subject to their
-   own licenses (see notices below).
+   own licenses (see NOTICE).
 
 THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -38,10 +49,4 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
----
-
-Third-party components:
-
-- legacy/engine/script/excanvas.compiled.js — Apache License 2.0 (Google Inc.)
-- Original myCount.org UI/engine concept — archival reference; separate
-  clearance may be required for the original branding.
+For provenance, asset attribution, and trademark notes, see NOTICE.

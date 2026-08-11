@@ -1,7 +1,8 @@
 {
-  "name": "mycount-fork",
-  "version": "1.0.0",
+  "name": "mycount",
+  "version": "0.4.0",
   "private": false,
+  "description": "Unofficial successor to myCount.org — online countdown timer (rewrite + archive fork)",
   "license": "SEE LICENSE IN LICENSE",
   "type": "module",
   "scripts": {

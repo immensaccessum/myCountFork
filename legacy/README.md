@@ -1,14 +1,12 @@
-# Legacy myCount fork (frozen snapshot)
+# Legacy snapshot (myCount archive v0.3)
 
-Оригинальная версия на HTML + движок `engine/` (myCount.org fork v0.3).
+Замороженная копия HTML + движка `engine/` из community-форка myCount.org.
 
-## Запуск локально
+**Upstream:** https://github.com/elite-nick/myCount_fork  
+**License:** MIT — see [LICENSE](LICENSE) in this directory.
+
+Не изменяйте файлы здесь. Актуальная разработка — в корне репозитория (Vite + TypeScript, `LICENSE` в корне).
 
 ```bash
-cd legacy
-python3 -m http.server 8081
+npm run dev:legacy   # из корня: http://localhost:8081/ru/
 ```
-
-Откройте http://localhost:8081/ru/
-
-Не изменяйте файлы здесь — это архив «на всякий случай». Разработка ведётся в корне репозитория (Vite + TypeScript).

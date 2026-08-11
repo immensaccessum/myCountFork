@@ -1,6 +1,8 @@
-# myCount Fork
+# myCount
 
-Форк ныне неработающего [myCount.org](https://mycount.org) — онлайн-счётчик времени до (или с) заданной даты.
+Неофициальный преемник [myCount.org](https://mycount.org) — онлайн-счётчик времени до (или с) заданной даты.
+
+Это **не** официальный сайт Internet Invest. Технически репозиторий — git-fork архива [elite-nick/myCount_fork](https://github.com/elite-nick/myCount_fork), но приложение **переписано** (Vite + TypeScript, Node API). Архив v0.3 в `legacy/` (MIT).
 
 **Продакшен:** https://app4.letovrf.ru/ru/
 
@@ -18,47 +20,25 @@ npm run deploy       # сборка + rsync на app4.letovrf.ru
 
 - Русский: `/ru/`
 - English: `/en/`
-- SEO-лендинги: `/do/<slug>/` (ru), `/until/<slug>/` (en) — ~21 страниц, sitemap в `dist/sitemap.xml`
-- Режимы в URL: `wm=1` события, `wm=3` редактор, `wm=4` embed (только счётчик)
-- Параметры: `t`, `tz`, `fid`, `t1`/`t2` (base64), `event`/`eid`, `lt=1` + локальная дата, `th=` тема фона
+- SEO-лендинги: `/do/<slug>/` (ru), `/until/<slug>/` (en)
+- Режимы: `wm=1` события, `wm=3` редактор, `wm=4` embed
+- Параметры: `t`, `tz`, `fid`, `t1`/`t2`, `event`/`eid`, `lt=1`, `th=`
 
 ## Возможности
 
-- **Ближайшие события** — каталог с API (`/api/events/RU`), праздники Nager, посадочные события, milestones
-- **Редактор** — дата/время, TZ, пресеты, таблица «круглых» вех, поиск по числу, `< 0 >` для листания вех
-- **Embed** — ссылка `wm=4`: свой заголовок (`t1`) + строка с датой отсчёта
-- **Короткие ссылки** — `POST /api/short` → `/s/:id`, живые OG-карточки с «осталось N дней»
-- **Экспорт** — `.ics`, QR-кода короткой ссылки
-- **Мои счётчики** — localStorage
-- **Темы фона** счётчика (`th=`), прогресс-бар до события
-- **PWA** — `manifest.webmanifest`, service worker (network-first для HTML)
-- **Тёмная тема**, мобильная вёрстка, Яндекс.Метрика (placeholder в `index.html`)
+- Каталог **ближайших событий** (`/api/events/RU`), праздники, посадочные страницы
+- Редактор, embed-ссылки, короткие `/s/:id`, живые OG-карточки
+- `.ics`, QR, «мои счётчики», темы фона, PWA, тёмная тема
 
-## Сервер (`server/`)
-
-Node на `:5199` (nginx проксирует `/api/`, `/og/`, `/s/`):
-
-| Endpoint | Описание |
-|----------|----------|
-| `GET /api/events/:cc` | Каталог событий |
-| `GET /api/landing/:idOrSlug` | Событие посадочной страницы |
-| `GET /api/health` | Healthcheck |
-| `POST /api/short` | Короткая ссылка |
-| `GET /og/card.png?…` | OG-изображение |
-| `GET /s/:id` | Редирект + OG |
-
-Бэкап `short-links.json` — systemd timer (`server/mycount-backup.*`). Мониторинг: [docs/monitoring.md](docs/monitoring.md).
+Подробнее — [docs/monitoring.md](docs/monitoring.md) (деплой, healthcheck, бэкап).
 
 ## Структура
 
 ```
-src/                 — Vite + TypeScript (SPA)
-  lib/               — даты, URL, события, PWA-утилиты
-  i18n/              — ru/en
-server/              — API, OG, landing-pages, events-catalog
-scripts/             — deploy, build-seo-pages
-public/              — статика, cimg, sw.js, иконки
-legacy/              — замороженная v0.3 (не трогать)
+src/                 — Vite + TypeScript (SPA)     [LICENSE]
+server/              — API, OG, каталог событий    [LICENSE]
+legacy/              — архив HTML v0.3             [MIT]
+public/              — статика, cimg, PWA
 ```
 
 ## Legacy
@@ -67,15 +47,22 @@ legacy/              — замороженная v0.3 (не трогать)
 npm run dev:legacy   # http://localhost:8081/ru/
 ```
 
+## Происхождение и лицензии
+
+| Что | Лицензия |
+|-----|----------|
+| Новый код (`src/`, `server/`, …) | [LICENSE](LICENSE) — некоммерческая, коммерция только у автора |
+| `legacy/` | [MIT](legacy/LICENSE) |
+| Ассеты, бренд, цепочка форков | [NOTICE](NOTICE) |
+
+- Оригинальный **myCount.org** — Internet Invest, Ltd. (сайт не работает).
+- Промежуточный архив — MIT-форк на GitHub.
+- **Этот проект** — переписанная версия; не претендует на официальный бренд.
+
 ## CI
 
-GitHub Actions: тесты и сборка на push (`.github/workflows/ci.yml`).
+GitHub Actions: `.github/workflows/ci.yml`
 
-## Лицензия
+## Контакты
 
-**Некоммерческая** с исключением для правообладателя — см. [LICENSE](LICENSE).
-
-- Можно использовать, форкать и дорабатывать **бесплатно и некоммерчески**
-- **Коммерческое использование** — только у автора (Alexey / [immensaccessum](https://github.com/immensaccessum))
-
-Оригинальный бренд myCount.org принадлежал Internet Invest, Ltd.
+Alexey — [immensaccessum](https://github.com/immensaccessum)

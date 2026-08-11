@@ -76,6 +76,6 @@
   "themePhysics": "Physics",
   "themeLit": "Classic",
   "progressLabel": "{pct}% elapsed since Jan 1 toward the event",
-  "footer": "myCount Fork v0.4",
+  "footer": "myCount v0.4",
   "adLabel": "Ad"
 }

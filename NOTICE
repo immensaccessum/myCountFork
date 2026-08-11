@@ -1,0 +1,55 @@
+myCount — provenance and third-party notices
+=============================================
+
+This repository is NOT the official myCount.org product. It is an independent
+reimplementation and continuation inspired by the defunct myCount.org service.
+
+Lineage
+-------
+
+1. myCount.org (circa 2000s–2010s)
+   - Online countdown timer by Internet Invest, Ltd.
+   - Site is no longer operational. Brand and original materials may remain
+     protected; this project does not claim ownership of the myCount.org brand.
+
+2. Community archive fork
+   - GitHub: https://github.com/elite-nick/myCount_fork
+   - Preserved HTML/JS engine when the original site disappeared.
+   - Licensed under MIT (see legacy/LICENSE).
+
+3. This repository (immensaccessum/myCountFork)
+   - Git fork of the community archive, then a full rewrite:
+     Vite + TypeScript (`src/`), Node API (`server/`), SEO landings, PWA, etc.
+   - New code: Non-Commercial License with owner commercial exception — LICENSE
+   - Archive snapshot: `legacy/` remains MIT.
+
+What is licensed how
+--------------------
+
+| Path | License | Copyright |
+|------|---------|-----------|
+| `src/`, `server/`, `scripts/`, `docs/`, root `index.html` | LICENSE (NC + owner commercial exception) | Alexey (immensaccessum) |
+| `legacy/` | MIT | myCount Fork contributors |
+| `public/cimg/001/c/*.png` | Digit counter sprites — likely from original myCount; used as reference/replacement where noted in git history |
+| `public/cimg/001/i/logo.png` | New logo (2026), NC license |
+| `public/cimg/001/i/find*.png` etc. | UI icons from archive; see lineage above |
+| `legacy/engine/script/excanvas.compiled.js` | Apache License 2.0 (Google Inc.) |
+| `qrcode` npm package | See package license |
+
+Naming
+------
+
+- **Git:** fork of elite-nick/myCount_fork (technical lineage).
+- **Product:** unofficial successor / rewrite — not an official myCount.org fork.
+
+Trademarks
+----------
+
+"myCount" and myCount.org branding were associated with Internet Invest, Ltd.
+Do not imply endorsement by the original publisher. Commercial use of the
+original brand requires separate clearance from the rights holder.
+
+Contact
+-------
+
+Alexey — immensaccessum@gmail.com · https://github.com/immensaccessum

@@ -67,7 +67,12 @@ function makeFormat(
 export function createTimeFormats(tx: LocaleStrings): TimeFormat[] {
   const formats: TimeFormat[] = [null as unknown as TimeFormat];
 
-  const f1 = makeFormat(1000, 's', (t, rm) => (rm === 0 ? restMode1(t, 1000, 1) : ''), 1000, 'secArray');
+  const f1 = makeFormat(1000, 's', (t, rm) => {
+    if (rm === 0) return restMode1(t, 1000, 1);
+    const d = new McDate();
+    d.setTime(t);
+    return ':' + String(d.ms).padStart(3, '0');
+  }, 1000, 'secArray');
   f1.txtArray = tx.secArray;
   formats[1] = f1;
 

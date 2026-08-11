@@ -51,6 +51,19 @@ function parseLocalSpec(params: URLSearchParams): LocalDateSpec | undefined {
   };
 }
 
+function decodeShareText(raw: string): string {
+  let value = raw;
+  // Legacy links: encodeURIComponent was applied before URLSearchParams (double-encoded %XX).
+  if (/%[0-9A-Fa-f]{2}/.test(value)) {
+    try {
+      value = decodeURIComponent(value);
+    } catch {
+      /* keep raw */
+    }
+  }
+  return Base64.decode(value);
+}
+
 export function parseUrlState(search: string): UrlState {
   const state: UrlState = { wm: 3 };
   if (!search || search.length < 2) return state;
@@ -70,9 +83,9 @@ export function parseUrlState(search: string): UrlState {
   const cc = params.get('cc');
   if (cc) state.cc = cc.toUpperCase();
   const t1 = params.get('t1');
-  if (t1) state.t1 = Base64.decode(decodeURIComponent(t1));
+  if (t1) state.t1 = decodeShareText(t1);
   const t2 = params.get('t2');
-  if (t2) state.t2 = Base64.decode(decodeURIComponent(t2));
+  if (t2) state.t2 = decodeShareText(t2);
   const local = parseLocalSpec(params);
   if (local) {
     state.lt = true;
@@ -104,8 +117,8 @@ export function buildAppShareUrl(params: ShareParams): string {
     }
   }
 
-  if (params.text1) q.set('t1', encodeURIComponent(Base64.encode(params.text1)));
-  if (params.text2) q.set('t2', encodeURIComponent(Base64.encode(params.text2)));
+  if (params.text1) q.set('t1', Base64.encode(params.text1));
+  if (params.text2) q.set('t2', Base64.encode(params.text2));
   if (params.eid) q.set('eid', params.eid);
   if (params.cc) q.set('cc', params.cc);
 
@@ -124,6 +137,7 @@ export function buildOgShareUrl(
   q.set('to', appUrl);
   q.set('title', title);
   q.set('desc', description);
+  q.set('ogv', '2');
   return `${origin}/og/${lang}/?${q.toString()}`;
 }
 

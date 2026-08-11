@@ -10,12 +10,12 @@ cd "$ROOT"
 npm run build
 
 echo "→ Sync static build (dist/)…"
-rsync -avz --delete \
+rsync -avz --delete --exclude 'server' \
   -e "ssh -p $PORT" \
   "$ROOT/dist/" "$SERVER:$REMOTE_DIR/"
 
 echo "→ Sync API/OG server…"
-rsync -avz \
+rsync -avz --exclude '.data' \
   -e "ssh -p $PORT" \
   "$ROOT/server/" "$SERVER:$REMOTE_DIR/server/"
 
@@ -48,10 +48,10 @@ server {
     include /opt/mycount-fork/server/nginx-app4.conf;
 }
 NGINX
-  nginx -t
-  systemctl reload nginx
 fi
 
+nginx -t
+systemctl reload nginx
 systemctl is-active mycount-fork
 REMOTE
 

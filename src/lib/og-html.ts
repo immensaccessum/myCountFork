@@ -9,16 +9,25 @@ function esc(s: string): string {
 export interface OgPageOptions {
   title: string;
   description: string;
+  pageUrl?: string;
   redirectUrl: string;
   imageUrl?: string;
+  imageWidth?: number;
+  imageHeight?: number;
   siteName?: string;
 }
 
 export function buildOgHtml(opts: OgPageOptions): string {
-  const img = opts.imageUrl ? `<meta property="og:image" content="${esc(opts.imageUrl)}">` : '';
+  const img = opts.imageUrl
+    ? `<meta property="og:image" content="${esc(opts.imageUrl)}">
+  <meta property="og:image:width" content="${opts.imageWidth ?? 1200}">
+  <meta property="og:image:height" content="${opts.imageHeight ?? 630}">
+  <meta property="og:image:type" content="image/png">`
+    : '';
   const site = opts.siteName
     ? `<meta property="og:site_name" content="${esc(opts.siteName)}">`
     : '';
+  const canonical = opts.pageUrl || opts.redirectUrl;
   return `<!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -28,14 +37,14 @@ export function buildOgHtml(opts: OgPageOptions): string {
   <meta property="og:type" content="website">
   <meta property="og:title" content="${esc(opts.title)}">
   <meta property="og:description" content="${esc(opts.description)}">
-  <meta property="og:url" content="${esc(opts.redirectUrl)}">
+  <meta property="og:url" content="${esc(canonical)}">
   ${site}
   ${img}
-  <meta name="twitter:card" content="summary">
+  <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="${esc(opts.title)}">
   <meta name="twitter:description" content="${esc(opts.description)}">
-  <meta http-equiv="refresh" content="0;url=${esc(opts.redirectUrl)}">
-  <link rel="canonical" href="${esc(opts.redirectUrl)}">
+  ${opts.imageUrl ? `<meta name="twitter:image" content="${esc(opts.imageUrl)}">` : ''}
+  <link rel="canonical" href="${esc(canonical)}">
 </head>
 <body>
   <p><a href="${esc(opts.redirectUrl)}">${esc(opts.title)}</a></p>

@@ -499,13 +499,38 @@ export class App {
     return this.appShareUrl(4);
   }
 
-  private ogShareUrl(): string {
+  private ogTitleDesc(): { title: string; desc: string } {
     const ev = findEventById(this.eventCatalog, this.currentEventEid);
     const title = ev
       ? `${ev.name[this.lang]} — ${this.helper.buildDateText(this.tx)}`
       : this.helper.buildDateText(this.tx);
     const desc = ev?.desc[this.lang] || title;
+    return { title, desc };
+  }
+
+  private ogShareUrl(): string {
+    const { title, desc } = this.ogTitleDesc();
     return buildOgShareUrl(this.lang, this.appShareUrl(4), title, desc);
+  }
+
+  /** Short link /s/:id — OG preview for messengers + redirect. Falls back to the long OG url. */
+  private async shortShareUrl(): Promise<string> {
+    const appUrl = this.appShareUrl(4);
+    const to = appUrl.startsWith(location.origin) ? appUrl.slice(location.origin.length) : appUrl;
+    const { title, desc } = this.ogTitleDesc();
+    try {
+      const r = await fetch('/api/short', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to, title, desc }),
+      });
+      if (!r.ok) throw new Error(String(r.status));
+      const data = (await r.json()) as { id?: string };
+      if (!data.id) throw new Error('no id');
+      return `${location.origin}/s/${data.id}`;
+    } catch {
+      return this.ogShareUrl();
+    }
   }
 
   private refreshUI(): void {
@@ -687,7 +712,7 @@ export class App {
       this.refreshUI();
     });
     this.root.querySelector('#copy-og-link')?.addEventListener('click', async () => {
-      const url = this.ogShareUrl();
+      const url = await this.shortShareUrl();
       try {
         await navigator.clipboard.writeText(url);
         const btn = this.root.querySelector('#copy-og-link');

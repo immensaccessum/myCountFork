@@ -37,6 +37,12 @@ describe('parseUrlState', () => {
     });
     expect(state.t).toBeUndefined();
   });
+
+  it('parses legacy double-encoded t1', () => {
+    const t1 = Base64.encode('Какая то дата');
+    const state = parseUrlState(`?wm=4&t=1&t1=${encodeURIComponent(encodeURIComponent(t1))}`);
+    expect(state.t1).toBe('Какая то дата');
+  });
 });
 
 describe('buildShareUrl', () => {
@@ -76,6 +82,21 @@ describe('buildAppShareUrl', () => {
       omitTz: true,
     });
     expect(url).not.toContain('tz=');
+  });
+
+  it('encodes t1 once and round-trips cyrillic text', () => {
+    const text = 'от 19 марта 2012 г.';
+    const url = buildAppShareUrl({
+      basePath: '/ru/',
+      bornTime: 1332104400000,
+      getTZ: () => 0,
+      format: 1,
+      text1: text,
+      text2: '',
+    });
+    expect(url).not.toContain('%252');
+    const state = parseUrlState(url.slice(url.indexOf('?')));
+    expect(state.t1).toBe(text);
   });
 
   it('builds local share url with lt params', () => {

@@ -23,6 +23,8 @@ echo "→ Configure systemd + nginx on server…"
 ssh -p "$PORT" "$SERVER" bash -s <<REMOTE
 set -euo pipefail
 cd "$REMOTE_DIR/server" && npm install --omit=dev --no-audit --no-fund --loglevel=error
+mkdir -p "$REMOTE_DIR/server/.data" "$REMOTE_DIR/server/.cache"
+chown -R www-data:www-data "$REMOTE_DIR/server/.data" "$REMOTE_DIR/server/.cache"
 install -m 644 "$REMOTE_DIR/server/mycount-fork.service" /etc/systemd/system/mycount-fork.service
 systemctl daemon-reload
 systemctl enable mycount-fork

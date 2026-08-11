@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && vite build && node scripts/build-seo-pages.mjs",
     "preview": "vite preview",
     "server": "node server/server.mjs",
     "og": "node server/server.mjs",

@@ -17,6 +17,7 @@ import {
   detectLang,
   langBasePath,
   parseUrlState,
+  MAX_SHARE_TEXT,
   type ShareMode,
   type ViewMode,
 } from './lib/url-state';
@@ -375,6 +376,16 @@ export class App {
     });
   }
 
+  private updateTextLimitHint(active?: HTMLInputElement): void {
+    const el = this.root.querySelector('#text-limit-hint');
+    if (!el) return;
+    if (active && active.value.length > 0) {
+      el.textContent = this.tx.textLimitLeft.replace('{n}', String(MAX_SHARE_TEXT - active.value.length));
+    } else {
+      el.textContent = this.tx.textLimitHint.replace('{n}', String(MAX_SHARE_TEXT));
+    }
+  }
+
   private updateTzToggleLabel(): void {
     const btn = this.root.querySelector('#tz-toggle');
     if (btn) btn.textContent = this.tzPanelOpen ? this.tx.hideSettings : this.tx.change;
@@ -516,7 +527,9 @@ export class App {
       return { title: `${ev.name[this.lang]} — ${dateText}`, desc: ev.desc[this.lang] || dateText };
     }
 
-    const custom = (this.root.querySelector<HTMLInputElement>('#inp-text1')?.value || this.text1).trim();
+    const custom = (this.root.querySelector<HTMLInputElement>('#inp-text1')?.value || this.text1)
+      .trim()
+      .slice(0, MAX_SHARE_TEXT);
     if (custom) return { title: custom, desc: dateText };
     return { title: dateText, desc: dateText };
   }
@@ -799,8 +812,14 @@ export class App {
         this.bornFromForm();
       });
     });
-    this.root.querySelector('#inp-text1')?.addEventListener('input', () => this.refreshUI());
-    this.root.querySelector('#inp-text2')?.addEventListener('input', () => this.refreshUI());
+    for (const sel of ['#inp-text1', '#inp-text2']) {
+      const input = this.root.querySelector<HTMLInputElement>(sel);
+      input?.addEventListener('input', () => {
+        this.updateTextLimitHint(input);
+        this.refreshUI();
+      });
+    }
+    this.updateTextLimitHint();
     this.root.querySelector('#rest-toggle')?.addEventListener('click', (e) => {
       e.preventDefault();
       this.helper.restMode = (this.helper.restMode + 1) % 2;
@@ -940,8 +959,9 @@ export class App {
             <p>${this.tx.restMode}
               <button type="button" id="rest-toggle" class="btn-ghost">${this.tx.restDecimal}</button>
             </p>
-            <label>${this.tx.topText}<input type="text" id="inp-text1" class="wide"></label>
-            <label>${this.tx.bottomText}<input type="text" id="inp-text2" class="wide"></label>
+            <label>${this.tx.topText}<input type="text" id="inp-text1" class="wide" maxlength="${MAX_SHARE_TEXT}"></label>
+            <label>${this.tx.bottomText}<input type="text" id="inp-text2" class="wide" maxlength="${MAX_SHARE_TEXT}"></label>
+            <p class="hint text-limit-hint" id="text-limit-hint">${this.tx.textLimitHint.replace('{n}', String(MAX_SHARE_TEXT))}</p>
             <h2>${this.tx.linkHeader}</h2>
             <fieldset class="share-mode">
               <legend>${this.tx.shareWhenLabel}</legend>

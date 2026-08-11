@@ -9,12 +9,15 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildOgHtml, requestOrigin } from './og-html.mjs';
 import { renderOgCard } from './og-image.mjs';
+import { allowRequest, clientIp, sendTooMany } from './rate-limit.mjs';
 
 const DEFAULT_PATH = join(dirname(fileURLToPath(import.meta.url)), '.data', 'short-links.json');
 
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
 const ID_LEN = 6;
-const MAX_LINKS = 100000;
+const MAX_LINKS = 20000;
+const CREATE_LIMIT_PER_MIN = 10;
+const CREATE_LIMIT_GLOBAL_PER_MIN = 120;
 
 export function createStore(path = DEFAULT_PATH) {
   let data = null;
@@ -108,6 +111,13 @@ export async function handleShortRoutes(req, res, store = defaultStore) {
   const path = (req.url || '').split('?')[0];
 
   if (req.method === 'POST' && path === '/api/short') {
+    if (
+      !allowRequest(`short:${clientIp(req)}`, CREATE_LIMIT_PER_MIN) ||
+      !allowRequest('short:global', CREATE_LIMIT_GLOBAL_PER_MIN)
+    ) {
+      sendTooMany(res);
+      return true;
+    }
     try {
       const raw = await readBody(req);
       const payload = validatePayload(JSON.parse(raw));

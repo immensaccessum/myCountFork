@@ -8,7 +8,7 @@
  */
 import http from 'node:http';
 import { handleApiRequest } from './handlers.mjs';
-import { buildOgHtml, requestOrigin } from './og-html.mjs';
+import { buildOgHtml, requestOrigin, safeRedirectTarget } from './og-html.mjs';
 import { handleShortRoutes } from './short-links.mjs';
 
 const PORT = Number(process.argv[2]) || 5199;
@@ -27,12 +27,18 @@ function handleOg(req, res) {
   }
   const desc = url.searchParams.get('desc') || title;
   const origin = requestOrigin(req);
+  const redirectUrl = safeRedirectTarget(to, origin);
+  if (!redirectUrl) {
+    res.writeHead(400);
+    res.end('Invalid redirect target');
+    return true;
+  }
   const pageUrl = `${origin}${url.pathname}${url.search}`;
   const html = buildOgHtml({
     title,
     description: desc,
     pageUrl,
-    redirectUrl: to,
+    redirectUrl,
     imageUrl: `${origin}/og-card.png`,
     imageWidth: 1200,
     imageHeight: 630,
@@ -54,6 +60,11 @@ const server = http.createServer((req, res) => {
     });
   });
 });
+
+// Slowloris / stuck-connection protection.
+server.requestTimeout = 15_000;
+server.headersTimeout = 10_000;
+server.keepAliveTimeout = 5_000;
 
 server.listen(PORT, () => {
   console.log(`myCount server http://localhost:${PORT}`);

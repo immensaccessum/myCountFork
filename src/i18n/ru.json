@@ -41,6 +41,8 @@
   "restUnits": "единицы времени",
   "topText": "Верхний текст:",
   "bottomText": "Нижний текст:",
+  "textLimitHint": "До {n} символов — текст попадает в ссылку и на карточку превью.",
+  "textLimitLeft": "Осталось {n} символов.",
   "presetsLabel": "Быстрые даты:",
   "presetNow": "Сейчас",
   "presetHour": "+1 час",

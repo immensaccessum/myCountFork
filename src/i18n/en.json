@@ -41,6 +41,8 @@
   "restUnits": "time units",
   "topText": "Top text:",
   "bottomText": "Bottom text:",
+  "textLimitHint": "Up to {n} characters — the text goes into the link and the preview card.",
+  "textLimitLeft": "{n} characters left.",
   "presetsLabel": "Quick dates:",
   "presetNow": "Now",
   "presetHour": "+1 hour",

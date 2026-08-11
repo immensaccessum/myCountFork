@@ -40,6 +40,8 @@ export interface LocaleStrings {
   restUnits: string;
   topText: string;
   bottomText: string;
+  textLimitHint: string;
+  textLimitLeft: string;
   presetsLabel: string;
   presetNow: string;
   presetHour: string;

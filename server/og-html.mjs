@@ -6,6 +6,25 @@ export function esc(s) {
     .replace(/>/g, '&gt;');
 }
 
+/**
+ * Anti open-redirect: only same-host absolute URLs or relative paths are allowed
+ * as redirect targets. Returns a safe absolute URL or null.
+ */
+export function safeRedirectTarget(to, origin) {
+  const value = String(to || '');
+  if (value.startsWith('/') && !value.startsWith('//')) return `${origin}${value}`;
+  try {
+    const url = new URL(value);
+    const own = new URL(origin);
+    if (url.host === own.host && (url.protocol === 'https:' || url.protocol === 'http:')) {
+      return url.href;
+    }
+  } catch {
+    /* fallthrough */
+  }
+  return null;
+}
+
 export function requestOrigin(req) {
   const host = req.headers.host || 'localhost';
   const forwarded = req.headers['x-forwarded-proto'];
@@ -38,6 +57,7 @@ export function buildOgHtml({
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
   <title>${esc(title)}</title>
   <meta property="og:type" content="website">
   <meta property="og:title" content="${esc(title)}">

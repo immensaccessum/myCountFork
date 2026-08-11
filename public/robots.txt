@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /og/
+Disallow: /s/
+Disallow: /api/
+
+Sitemap: https://app4.letovrf.ru/sitemap.xml

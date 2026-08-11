@@ -3,6 +3,8 @@ import { buildOgHtml } from './src/lib/og-html';
 import { parseOgQuery } from './src/lib/url-state';
 import { handleApiRequest } from './server/handlers.mjs';
 import { handleShortRoutes } from './server/short-links.mjs';
+// @ts-expect-error untyped server module
+import { safeRedirectTarget } from './server/og-html.mjs';
 
 function ogMiddleware(
   req: { url?: string; headers: { host?: string } },
@@ -32,11 +34,20 @@ function ogMiddleware(
   const proto =
     forwarded?.split(',')[0]?.trim() ||
     (host.includes('localhost') || host.startsWith('127.0.0.1') ? 'http' : 'https');
+  const redirectUrl = (safeRedirectTarget as (to: string, origin: string) => string | null)(
+    parsed.to,
+    `${proto}://${host}`,
+  );
+  if (!redirectUrl) {
+    res.statusCode = 400;
+    res.end('Invalid redirect target');
+    return;
+  }
   const html = buildOgHtml({
     title: parsed.title,
     description: parsed.desc,
     pageUrl: `${proto}://${host}${path}${q}`,
-    redirectUrl: parsed.to,
+    redirectUrl,
     imageUrl: `${proto}://${host}/og-card.png`,
     imageWidth: 1200,
     imageHeight: 630,

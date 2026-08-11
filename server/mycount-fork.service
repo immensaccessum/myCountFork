@@ -4,10 +4,29 @@ After=network.target
 
 [Service]
 Type=simple
+User=www-data
+Group=www-data
 WorkingDirectory=/opt/mycount-fork
 ExecStart=/usr/bin/node server/server.mjs 5199
 Restart=on-failure
 RestartSec=3
+
+# Resource limits: the box must survive even if the app misbehaves.
+MemoryMax=300M
+CPUQuota=80%
+TasksMax=64
+LimitNOFILE=4096
+
+# Sandbox: read-only system, writes only to cache/data dirs.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ReadWritePaths=/opt/mycount-fork/server/.data /opt/mycount-fork/server/.cache
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+LockPersonality=true
 
 [Install]
 WantedBy=multi-user.target

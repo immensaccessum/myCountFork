@@ -51,6 +51,11 @@ function parseLocalSpec(params: URLSearchParams): LocalDateSpec | undefined {
   };
 }
 
+/** Max length for user texts (t1/t2): keeps the URL compact and the OG card readable. */
+export const MAX_SHARE_TEXT = 80;
+/** Hard cap when reading texts from foreign/legacy URLs. */
+const MAX_PARSED_TEXT = 200;
+
 function decodeShareText(raw: string): string {
   let value = raw;
   // Legacy links: encodeURIComponent was applied before URLSearchParams (double-encoded %XX).
@@ -61,7 +66,7 @@ function decodeShareText(raw: string): string {
       /* keep raw */
     }
   }
-  return Base64.decode(value);
+  return Base64.decode(value).slice(0, MAX_PARSED_TEXT);
 }
 
 export function parseUrlState(search: string): UrlState {
@@ -117,8 +122,8 @@ export function buildAppShareUrl(params: ShareParams): string {
     }
   }
 
-  if (params.text1) q.set('t1', Base64.encode(params.text1));
-  if (params.text2) q.set('t2', Base64.encode(params.text2));
+  if (params.text1) q.set('t1', Base64.encode(params.text1.slice(0, MAX_SHARE_TEXT)));
+  if (params.text2) q.set('t2', Base64.encode(params.text2.slice(0, MAX_SHARE_TEXT)));
   if (params.eid) q.set('eid', params.eid);
   if (params.cc) q.set('cc', params.cc);
 
